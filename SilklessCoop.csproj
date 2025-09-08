@@ -30,10 +30,6 @@
 		<Reference Include="UnityEngine.CoreModule">
 			<HintPath>../../../Hollow Knight Silksong_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
 		</Reference>
-
-		<Reference Include="UnityEngine.UI">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/UnityEngine.UI.dll</HintPath>
-		</Reference>
 	</ItemGroup>
   
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
