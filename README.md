@@ -21,6 +21,7 @@ Disclaimer: this mod was made in 2 days with no prior modding experience, so exp
 ![Bellhart Screenshot 2](./Media/bellhart_2.jpg)
 ![Bellhart Screenshot 3](./Media/bellhart_3.jpg)
 ![Bellhart Screenshot 4](./Media/bellhart_4.jpg)
+![Bellhart Screenshot 5](./Media/bellhart_5.jpg)
 ![Shellwood Screenshot 1](./Media/shellwood_1.jpg)
 ![Shellwood Screenshot 1](./Media/shellwood_2.jpg)
 ![Shellwood Screenshot 1](./Media/shellwood_3.jpg)
