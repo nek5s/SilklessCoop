@@ -1,5 +1,11 @@
 # SilklessCoop
 
+V2.1 - Added Compass sync
+
+V2.0 - Added Steam support
+
+V1.0 - Initial release
+
 View the Nexusmods page [here](https://www.nexusmods.com/hollowknightsilksong/mods/73).
 
 A simple coop mod allowing you to see your friends in each others game.

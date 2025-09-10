@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SilklessCoop
 {
@@ -11,7 +12,6 @@ namespace SilklessCoop
     {
         public string IPAddress;
         public int Port;
-        public int TickRate;
 
         private TcpClient _socket;
         private NetworkStream _stream;
@@ -32,20 +32,21 @@ namespace SilklessCoop
             Logger.LogInfo("Enabling standalone connector...");
             try
             {
-                _socket = new TcpClient(IPAddress, Port);
-                _stream = _socket.GetStream();
-                _stream.ReadTimeout = 500;
+                Task.Run(() =>
+                {
+                    _socket = new TcpClient(IPAddress, Port);
+                    _stream = _socket.GetStream();
+                    _stream.ReadTimeout = 500;
 
-                _rxThread = new Thread(RxThreadFunction);
-                _rxQueue = new Queue<string>();
-                _rxRunning = true;
-                _rxThread.Start();
+                    _rxThread = new Thread(RxThreadFunction);
+                    _rxQueue = new Queue<string>();
+                    _rxRunning = true;
+                    _rxThread.Start();
 
-                InvokeRepeating("Tick", 0, 1.0f / TickRate);
+                    base.Enable();
 
-                base.Enable();
-
-                Logger.LogInfo("Standalone connector has been enabled successfully.");
+                    Logger.LogInfo("Standalone connector has been enabled successfully.");
+                });
             } catch (Exception e)
             {
                 Logger.LogError($"Error while enabling standalone connector: {e}");
@@ -61,15 +62,17 @@ namespace SilklessCoop
             Logger.LogInfo("Disabling standalone connector...");
             try
             {
-                CancelInvoke("Tick");
-                _rxRunning = false;
-                _rxThread.Join();
-                if (_stream != null) _stream.Close();
-                if (_socket != null) _socket.Close();
+                Task.Run(() =>
+                {
+                    _rxRunning = false;
+                    _rxThread.Join();
+                    if (_stream != null) _stream.Close();
+                    if (_socket != null) _socket.Close();
 
-                base.Disable();
+                    base.Disable();
 
-                Logger.LogInfo("Standalone connector has been disabled successfully.");
+                    Logger.LogInfo("Standalone connector has been disabled successfully.");
+                });
             }
             catch (Exception e)
             {

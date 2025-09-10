@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace SilklessCoop
 {
     internal class ConnectorToggler : MonoBehaviour
     {
+        public KeyCode MultiplayerToggleKey;
+
         private Connector _connector;
 
         private void Start()
@@ -18,7 +17,7 @@ namespace SilklessCoop
         {
             if (!_connector.Initialized) return;
 
-            if (Input.GetKeyDown(KeyCode.F5))
+            if (Input.GetKeyDown(MultiplayerToggleKey))
             {
                 if (_connector.Active) _connector.Disable();
                 else _connector.Enable();

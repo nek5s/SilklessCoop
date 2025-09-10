@@ -9,9 +9,6 @@ namespace SilklessCoop
     {
         private enum ELobbyRole { DEFAULT, SERVER, CLIENT }
 
-        // config
-        public int TickRate;
-
         // callbacks
         private Callback<GameRichPresenceJoinRequested_t> _gameRichPresenceJoinRequested;
         private Callback<P2PSessionRequest_t> _p2pSessionRequest;
@@ -54,8 +51,6 @@ namespace SilklessCoop
 
                 SteamFriends.SetRichPresence("connect", _ownId.ToString());
 
-                InvokeRepeating("Tick", 0, 1.0f / TickRate);
-
                 base.Enable();
 
                 Logger.LogInfo("Steam connector has been enabled successfully.");
@@ -84,8 +79,6 @@ namespace SilklessCoop
                 foreach (CSteamID id in _connected)
                     SteamNetworking.CloseP2PSessionWithUser(id);
 
-                CancelInvoke("Tick");
-
                 SteamFriends.ClearRichPresence();
 
                 base.Disable();
@@ -98,9 +91,11 @@ namespace SilklessCoop
             }
         }
 
-        private void Update()
+        protected override void Update()
         {
             if (Initialized && Active) SteamAPI.RunCallbacks();
+
+            base.Update();
         }
 
         private void OnGameRichPresenceJoinRequested(GameRichPresenceJoinRequested_t request)
@@ -127,7 +122,7 @@ namespace SilklessCoop
 
             if (_role != ELobbyRole.CLIENT)
             {
-                Logger.LogInfo("LobbyRole set to CLIENT.");
+                if (PrintDebugOutput) Logger.LogInfo("LobbyRole set to CLIENT.");
                 _role = ELobbyRole.CLIENT;
             }
 
@@ -155,7 +150,7 @@ namespace SilklessCoop
 
             if (_role != ELobbyRole.SERVER)
             {
-                Logger.LogInfo("LobbyRole set to SERVER.");
+                if (PrintDebugOutput) Logger.LogInfo("LobbyRole set to SERVER.");
                 _role = ELobbyRole.SERVER;
             }
 
@@ -177,7 +172,7 @@ namespace SilklessCoop
 
             if (_connected.Count == 0)
             {
-                Logger.LogInfo("LobbyRole set to DEFAULT.");
+                if (PrintDebugOutput) Logger.LogInfo("LobbyRole set to DEFAULT.");
                 _role = ELobbyRole.DEFAULT;
                 SteamFriends.SetRichPresence("connect", _ownId.ToString());
             }
@@ -185,7 +180,7 @@ namespace SilklessCoop
             Logger.LogInfo($"Disconnected from {fail.m_steamIDRemote} successfully.");
         }
 
-        private void Tick()
+        protected override void Tick()
         {
             try
             {
@@ -205,6 +200,13 @@ namespace SilklessCoop
                     if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out _, out CSteamID sender))
                     {
                         string data = Encoding.UTF8.GetString(buffer);
+
+                        string[] parts = data.Split("::");
+
+                        string metadata = $"{_connected.Count}";
+
+                        data = $"{parts[0]}::{metadata}::{parts[2]}";
+
                         _sync.ApplyUpdate(data);
 
                         if (_role == ELobbyRole.SERVER)
