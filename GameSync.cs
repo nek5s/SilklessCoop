@@ -1,8 +1,10 @@
 ﻿using BepInEx.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using static TeamCherry.DebugMenu.DebugMenu;
 
 namespace SilklessCoop
 {
@@ -10,21 +12,15 @@ namespace SilklessCoop
     {
         private static float parseFloat(string s)
         {
-            s = s.Replace(",", ".");
-            if (s.IndexOf('.') < 0) return float.Parse(s);
+            float f1 = float.Parse(s.Replace(',', '.'));
+            float f2 = float.Parse(s.Replace('.', '.'));
 
-            string before = s.Split(".")[0];
-            string after = s.Split(".")[1];
-
-            float fbefore = parseFloat(before);
-            float fafter = parseFloat(after) / MathF.Pow(10, after.Length);
-
-            return fbefore + fafter;
+            if (Mathf.Abs(f1) < Mathf.Abs(f2)) return f1;
+            else return f2;
         }
 
         public ManualLogSource Logger;
-        public bool SyncCompasses;
-        public bool PrintDebugOutput;
+        public ModConfig Config;
 
         // sprite sync - self
         private GameObject _hornetObject = null;
@@ -37,11 +33,12 @@ namespace SilklessCoop
         private Dictionary<string, SimpleInterpolator> _playerInterpolators = new Dictionary<string, SimpleInterpolator>();
 
         // player count
-        private GameObject _mainQuests = null;
+        private GameObject _pauseMenu = null;
         private int _playerCount = 0;
         private List<GameObject> _countPins = new List<GameObject>();
 
         // map sync - self
+        private GameObject _mainQuests = null;
         private GameObject _map = null;
         private GameObject _compass = null;
 
@@ -70,10 +67,13 @@ namespace SilklessCoop
             if (!_compass) _compass = _map.transform.Find("Compass Icon")?.gameObject;
             if (!_compass) { _setup = false; return; }
 
+            if (!_pauseMenu) _pauseMenu = Resources.FindObjectsOfTypeAll<GameObject>().FirstOrDefault(g => g.name == "NewPauseMenuScreen");
+            if (!_pauseMenu) { _setup = false; return; }
+
             if (!_mainQuests) _mainQuests = _map.transform.Find("Main Quest Pins")?.gameObject;
             if (!_mainQuests) { _setup = false; return; }
 
-            if (SyncCompasses)
+            if (Config.SyncCompasses)
             {
                 foreach (GameObject g in _playerCompasses.Values)
                     if (g != null) g.SetActive(_mainQuests.activeSelf);
@@ -107,7 +107,7 @@ namespace SilklessCoop
             float compassX = 0;
             float compassY = 0;
 
-            if (SyncCompasses)
+            if (Config.SyncCompasses)
             {
                 compassActive = _compass.activeSelf ? 1 : 0;
                 compassX = _compass.transform.localPosition.x;
@@ -115,7 +115,7 @@ namespace SilklessCoop
             }
 
             string baseData = $"{scene}:{posX}:{posY}:{posZ}:{spriteId}:{scaleX}:{vX}:{vY}";
-            string compassData = SyncCompasses ? $":{compassActive}:{compassX}:{compassY}" : "";
+            string compassData = Config.SyncCompasses ? $":{compassActive}:{compassX}:{compassY}" : "";
             string data = $"{baseData}{compassData}";
 
             return data;
@@ -127,9 +127,9 @@ namespace SilklessCoop
             {
                 if (!_setup) return;
 
-                UpdateUI();
+                // if (Config.PrintDebugOutput) Logger.LogInfo($"Applying update {data}...");
 
-                if (PrintDebugOutput) Logger.LogInfo($"Applying update {data}...");
+                UpdateUI();
 
                 string[] parts = data.Split("::");
                 string id = parts[0];
@@ -151,7 +151,7 @@ namespace SilklessCoop
                 float compassX = 0;
                 float compassY = 0;
 
-                if (SyncCompasses)
+                if (Config.SyncCompasses && contentParts.Length > 8)
                 {
                     compassActive = contentParts[8] == "1";
                     compassX = parseFloat(contentParts[9]);
@@ -170,7 +170,7 @@ namespace SilklessCoop
                 if (!_playerCompasses.ContainsKey(id))
                 {
                     _playerCompasses.Add(id, null);
-                    _playerCompassSprites.Add(id, null);
+                    if (!_playerCompassSprites.ContainsKey(id)) _playerCompassSprites.Add(id, null);
                 }
 
                 if (!sameScene)
@@ -192,7 +192,7 @@ namespace SilklessCoop
                     else
                     {
                         // create player
-                        if (PrintDebugOutput) Logger.LogInfo($"Creating new player object for player {id}...");
+                        if (Config.PrintDebugOutput) Logger.LogInfo($"Creating new player object for player {id}...");
 
                         GameObject newObject = new GameObject();
                         newObject.SetName("SilklessCooperator");
@@ -209,35 +209,35 @@ namespace SilklessCoop
                         _playerSprites[id] = newSprite;
                         _playerInterpolators[id] = newInterpolator;
 
-                        if (PrintDebugOutput) Logger.LogInfo($"Successfully created new player object for player {id}.");
+                        if (Config.PrintDebugOutput) Logger.LogInfo($"Successfully created new player object for player {id}.");
                     }
                 }
                 
-                if (SyncCompasses)
+                if (Config.SyncCompasses)
                 {
                     if (compassActive)
                     {
                         if (_playerCompasses[id] != null)
                         {
                             // update compass
-                            _playerCompasses[id].transform.localPosition = new Vector3(compassX, compassY - 1.207f, _compass.transform.localPosition.z + 0.001f);
+                            _playerCompasses[id].transform.localPosition = new Vector3(compassX, compassY, _compass.transform.localPosition.z + 0.001f);
                             _playerCompassSprites[id].color = new Color(1, 1, 1, 0.7f);
                         }
                         else
                         {
                             // create compass
-                            if (PrintDebugOutput) Logger.LogInfo($"Creating new compass for player {id}...");
+                            if (Config.PrintDebugOutput) Logger.LogInfo($"Creating new compass for player {id}...");
 
                             GameObject newObject = Instantiate(_compass, _map.transform);
                             newObject.SetName("SilklessCompass");
-                            newObject.transform.localPosition = new Vector3(compassX, compassY - 1.207f, _compass.transform.localPosition.z + 0.001f);
+                            newObject.transform.localPosition = new Vector3(compassX, compassY, _compass.transform.localPosition.z + 0.001f);
                             tk2dSprite newSprite = newObject.GetComponent<tk2dSprite>();
                             newSprite.color = new Color(1, 1, 1, 0.7f);
 
                             _playerCompasses[id] = newObject;
                             _playerCompassSprites[id] = newSprite;
 
-                            if (PrintDebugOutput) Logger.LogInfo($"Successfully created new compass for player {id}.");
+                            if (Config.PrintDebugOutput) Logger.LogInfo($"Successfully created new compass for player {id}.");
                         }
                     }
                     else
@@ -254,29 +254,36 @@ namespace SilklessCoop
 
         private void UpdateUI()
         {
-            while (_countPins.Count < _playerCount)
+            try
             {
-                if (PrintDebugOutput) Logger.LogInfo($"Creating player count pin {_countPins.Count + 1}...");
+                while (_countPins.Count < _playerCount)
+                {
+                    if (Config.PrintDebugOutput) Logger.LogInfo($"Creating player count pin {_countPins.Count + 1}...");
 
-                GameObject newPin = Instantiate(_compass, _map.transform);
-                newPin.SetName("SilklessPlayerCountPin");
-                _countPins.Add(newPin);
+                    GameObject newPin = Instantiate(_compass, _map.transform);
+                    newPin.SetName("SilklessPlayerCountPin");
+                    _countPins.Add(newPin);
 
-                if (PrintDebugOutput) Logger.LogInfo($"Successfully created player count pin {_countPins.Count}.");
+                    if (Config.PrintDebugOutput) Logger.LogInfo($"Successfully created player count pin {_countPins.Count}.");
+                }
+
+                while (_countPins.Count > _playerCount)
+                {
+                    if (Config.PrintDebugOutput) Logger.LogInfo($"Removing player count pin {_countPins.Count}...");
+
+                    Destroy(_countPins[_countPins.Count - 1]);
+                    _countPins.RemoveAt(_countPins.Count - 1);
+
+                    if (Config.PrintDebugOutput) Logger.LogInfo($"Successfully removed player count pin {_countPins.Count + 1}.");
+                }
+
+                for (int i = 0; i < _countPins.Count; i++)
+                    _countPins[i].transform.position = new Vector3(-14.8f + i * 0.9f, -8.2f, -5f);
             }
-
-            while (_countPins.Count > _playerCount)
+            catch (Exception e)
             {
-                if (PrintDebugOutput) Logger.LogInfo($"Removing player count pin {_countPins.Count}...");
-
-                Destroy(_countPins[_countPins.Count - 1]);
-                _countPins.RemoveAt(_countPins.Count - 1);
-
-                if (PrintDebugOutput) Logger.LogInfo($"Successfully removed player count pin {_countPins.Count + 1}.");
+                Logger.LogError($"Error while updating ui: {e}");
             }
-
-            for (int i = 0; i < _countPins.Count; i++)
-                _countPins[i].transform.position = new Vector3(-14.8f + i * 0.9f, -8.2f, -5f);
         }
 
         public void Reset()

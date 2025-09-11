@@ -20,6 +20,8 @@ namespace SilklessCoop
         private CSteamID _hostId;
         private HashSet<CSteamID> _connected;
 
+        public override string GetName() { return "Steam connector"; }
+
         public override bool Init()
         {
             Logger.LogInfo("Initializing steam connector...");
@@ -122,7 +124,7 @@ namespace SilklessCoop
 
             if (_role != ELobbyRole.CLIENT)
             {
-                if (PrintDebugOutput) Logger.LogInfo("LobbyRole set to CLIENT.");
+                if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to CLIENT.");
                 _role = ELobbyRole.CLIENT;
             }
 
@@ -150,7 +152,7 @@ namespace SilklessCoop
 
             if (_role != ELobbyRole.SERVER)
             {
-                if (PrintDebugOutput) Logger.LogInfo("LobbyRole set to SERVER.");
+                if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to SERVER.");
                 _role = ELobbyRole.SERVER;
             }
 
@@ -172,7 +174,7 @@ namespace SilklessCoop
 
             if (_connected.Count == 0)
             {
-                if (PrintDebugOutput) Logger.LogInfo("LobbyRole set to DEFAULT.");
+                if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to DEFAULT.");
                 _role = ELobbyRole.DEFAULT;
                 SteamFriends.SetRichPresence("connect", _ownId.ToString());
             }

@@ -5,15 +5,17 @@ namespace SilklessCoop
 {
     internal abstract class Connector : MonoBehaviour
     {
-        protected GameSync _sync;
         public ManualLogSource Logger;
-        public int TickRate;
-        public bool PrintDebugOutput;
+        public ModConfig Config;
 
         public bool Initialized;
         public bool Active;
 
+        protected GameSync _sync;
+
         protected float _tickTimeout;
+
+        public abstract string GetName();
 
         protected void Start()
         {
@@ -38,7 +40,7 @@ namespace SilklessCoop
                 if (_tickTimeout <= 0)
                 {
                     Tick();
-                    _tickTimeout = 1.0f / TickRate;
+                    _tickTimeout = 1.0f / Config.TickRate;
                 }
             }
         }

@@ -1,6 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Configuration;
-using System;
 using UnityEngine;
 
 namespace SilklessCoop;
@@ -8,81 +6,52 @@ namespace SilklessCoop;
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class Plugin : BaseUnityPlugin
 {
-    private enum ConnectionType
-    {
-        ECHOSERVER,
-        STEAM_P2P
-    };
-
-    private ConfigEntry<string> _multiplayerToggleKey;
-    private ConfigEntry<ConnectionType> _connectionType;
-    private ConfigEntry<int> _tickRate;
-    private ConfigEntry<bool> _syncCompasses;
-    private ConfigEntry<bool> _printDebugOutput;
-    private ConfigEntry<string> _echoServerIP;
-    private ConfigEntry<int> _echoServerPort;
-
     private void Awake()
     {
-        _multiplayerToggleKey = Config.Bind<string>("General", "Toggle Key", "F5", "Key used to toggle multiplayer.");
-        _connectionType = Config.Bind<ConnectionType>("General", "Connection Type", ConnectionType.ECHOSERVER, "Choose echoserver for standalone or steam_p2p for Steam.");
-        _tickRate = Config.Bind<int>("General", "Tick Rate", 20, "Messages per second sent to the server.");
-        _syncCompasses = Config.Bind<bool>("General", "Sync Compasses", true, "Enables seeing other players compasses on your map.");
-        _printDebugOutput = Config.Bind<bool>("General", "Print Debug Output", false, "Enables advanced logging to help find bugs.");
+        // bind configs
+        ModConfig config = new ModConfig();
+        config.MultiplayerToggleKey = Config.Bind<KeyCode>("General", "Toggle Key", KeyCode.F5, "Key used to toggle multiplayer.").Value;
+        config.ConnectionType = Config.Bind<ConnectionType>("General", "Connection Type", ConnectionType.STEAM_P2P, "Choose echoserver for standalone or steam_p2p for Steam.").Value;
+        config.TickRate = Config.Bind<int>("General", "Tick Rate", 20, "Messages per second sent to the server.").Value;
+        config.SyncCompasses = Config.Bind<bool>("General", "Sync Compasses", true, "Enables seeing other players compasses on your map.").Value;
 
-        _echoServerIP = Config.Bind<string>("Standalone", "Server IP Address", "127.0.0.1", "IP Address of the standalone server.");
-        _echoServerPort = Config.Bind<int>("Standalone", "Server Port", 45565, "Port of the standalone server.");
+        config.PrintDebugOutput = Config.Bind<bool>("General", "Print Debug Output", true, "Enables advanced logging to help find bugs.").Value;
 
+        config.EchoServerIP = Config.Bind<string>("Standalone", "Server IP Address", "127.0.0.1", "IP Address of the standalone server.").Value;
+        config.EchoServerPort = Config.Bind<int>("Standalone", "Server Port", 45565, "Port of the standalone server.").Value;
+
+        config.PlayerOpacity = Config.Bind<float>("Visuals", "Player Opacity", 0.7f, "Opacity of other players (0.0f = invisible, 1.0f = as opaque as yourself).").Value;
+        config.ActiveCompassOpacity = Config.Bind<float>("Visuals", "Active Compass Opacity", 0.7f, "Opacity of other players' compasses while they have their map open.").Value;
+        config.InactiveCompassOpacity = Config.Bind<float>("Visuals", "Inactive Compass Opacity", 0.35f, "Opacity of other players' compasses while they have their map closed.").Value;
+
+        // set up mod
         Logger.LogInfo($"Loading {MyPluginInfo.PLUGIN_GUID}...");
 
         GameObject persistentObject = new GameObject("SilklessCoop");
         DontDestroyOnLoad(persistentObject);
 
-        ConnectorToggler ct = persistentObject.AddComponent<ConnectorToggler>();
-        try
-        {
-            ct.MultiplayerToggleKey = Enum.Parse<KeyCode>(_multiplayerToggleKey.Value);
-        }
-        catch (Exception)
-        {
-            Logger.LogError("Could not set keycode, reverting to F5!");
-            ct.MultiplayerToggleKey = KeyCode.F5;
-        }
-
         GameSync sync = persistentObject.AddComponent<GameSync>();
         sync.Logger = Logger;
-        sync.SyncCompasses = _syncCompasses.Value;
-        sync.PrintDebugOutput = _printDebugOutput.Value;
+        sync.Config = config;
 
-        if (_connectionType.Value == ConnectionType.ECHOSERVER)
+        UIAdder ua = persistentObject.AddComponent<UIAdder>();
+        ua.Logger = Logger;
+        ua.Config = config;
+
+        Connector c = null;
+        if (config.ConnectionType == ConnectionType.ECHOSERVER) c = persistentObject.AddComponent<StandaloneConnector>();
+        if (config.ConnectionType == ConnectionType.STEAM_P2P) c = persistentObject.AddComponent<SteamConnector>();
+        c.Logger = Logger;
+        c.Config = config;
+
+        if (!c.Init())
         {
-            StandaloneConnector sc = persistentObject.AddComponent<StandaloneConnector>();
-            sc.Logger = Logger;
-            sc.IPAddress = _echoServerIP.Value;
-            sc.Port = _echoServerPort.Value;
-            sc.TickRate = _tickRate.Value;
-            sc.PrintDebugOutput = _printDebugOutput.Value;
-
-            if (!sc.Init())
-            {
-                Logger.LogError("Standalone connector has failed to initialize!");
-                return;
-            }
-        } else
-        {
-            SteamConnector sc = persistentObject.AddComponent<SteamConnector>();
-            sc.Logger = Logger;
-            sc.TickRate = _tickRate.Value;
-            sc.PrintDebugOutput = _printDebugOutput.Value;
-
-            if (!sc.Init())
-            {
-                Logger.LogError("Steam connector has failed to initialize!");
-                return;
-            }
+            Logger.LogError($"{c.GetName()} has failed to initialize!");
+            return;
         }
 
+        Logger.LogInfo($"{c.GetName()} has initialized successfully.");
+
         Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} has initialized successfully.");
-        Logger.LogInfo($"Press {_multiplayerToggleKey.Value} to enable multiplayer.");
     }
 }

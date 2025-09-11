@@ -10,14 +10,13 @@ namespace SilklessCoop
 {
     internal class StandaloneConnector : Connector
     {
-        public string IPAddress;
-        public int Port;
-
         private TcpClient _socket;
         private NetworkStream _stream;
         private bool _rxRunning;
         private Thread _rxThread;
         private Queue<string> _rxQueue;
+
+        public override string GetName() { return "Standalone connector"; }
 
         public override bool Init()
         {
@@ -34,7 +33,7 @@ namespace SilklessCoop
             {
                 Task.Run(() =>
                 {
-                    _socket = new TcpClient(IPAddress, Port);
+                    _socket = new TcpClient(Config.EchoServerIP, Config.EchoServerPort);
                     _stream = _socket.GetStream();
                     _stream.ReadTimeout = 500;
 

@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.1</TargetFramework>
         <AssemblyName>SilklessCoop</AssemblyName>
         <Product>SilklessCoop</Product>
-        <Version>2.1.0</Version>
+        <Version>2.2.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RestoreAdditionalProjectSources>
@@ -26,9 +26,21 @@
 		<Reference Include="TeamCherry.TK2D">
 			<HintPath>../../../Hollow Knight Silksong_Data/Managed/TeamCherry.TK2D.dll</HintPath>
 		</Reference>
+
+		<Reference Include="TeamCherry.Localization">
+			<HintPath>../../../Hollow Knight Silksong_Data/Managed/TeamCherry.Localization.dll</HintPath>
+		</Reference>
+
+		<Reference Include="Assembly-CSharp">
+			<HintPath>../../../Hollow Knight Silksong_Data/Managed/Assembly-CSharp.dll</HintPath>
+		</Reference>
 		
 		<Reference Include="UnityEngine.CoreModule">
 			<HintPath>../../../Hollow Knight Silksong_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+
+		<Reference Include="UnityEngine.UI">
+			<HintPath>../../../Hollow Knight Silksong_Data/Managed/UnityEngine.UI.dll</HintPath>
 		</Reference>
 
 		<Reference Include="com.rlabrecque.steamworks.net">
