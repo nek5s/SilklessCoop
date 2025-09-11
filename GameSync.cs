@@ -189,8 +189,6 @@ namespace SilklessCoop
                         _playerObjects[id].transform.localScale = new Vector3(scaleX, 1, 1);
                         _playerSprites[id].spriteId = spriteId;
                         _playerInterpolators[id].velocity = new Vector3(vX, vY, 0);
-
-                        Logger.LogInfo($"Updated player position to: {posX} {posY} {posZ}");
                     }
                     else
                     {
