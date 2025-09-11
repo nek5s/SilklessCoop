@@ -134,6 +134,7 @@ namespace SilklessCoop
         private void OnP2PSessionRequest(P2PSessionRequest_t request)
         {
             // called on the server
+            Logger.LogInfo($"Incoming connection from {request.m_steamIDRemote}...");
 
             if (_role == ELobbyRole.CLIENT)
             {
@@ -187,10 +188,10 @@ namespace SilklessCoop
             try
             {
                 // send
-                string updateData = $"{_ownId}::1::{_sync.GetUpdateContent()}";
+                string updateData = _sync.GetUpdateContent();
                 if (updateData != null)
                 {
-                    byte[] updateMsg = Encoding.UTF8.GetBytes(updateData);
+                    byte[] updateMsg = Encoding.UTF8.GetBytes($"{_ownId}::1::{updateData}");
                     foreach (CSteamID id in _connected) SteamNetworking.SendP2PPacket(id, updateMsg, (uint) updateMsg.Length, EP2PSend.k_EP2PSendReliable);
                 }
 

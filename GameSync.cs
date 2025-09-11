@@ -4,16 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static TeamCherry.DebugMenu.DebugMenu;
 
 namespace SilklessCoop
 {
     internal class GameSync : MonoBehaviour
     {
-        private static float parseFloat(string s)
+        private static float stof(string s)
         {
-            float f1 = float.Parse(s.Replace(',', '.'));
-            float f2 = float.Parse(s.Replace('.', '.'));
+            float f1;
+            try { f1 = float.Parse(s.Replace(",", ".")); } catch (Exception) { f1 = float.MaxValue; }
+            float f2;
+            try { f2 = float.Parse(s.Replace(".", ",")); } catch (Exception) { f2 = float.MaxValue; }
 
             if (Mathf.Abs(f1) < Mathf.Abs(f2)) return f1;
             else return f2;
@@ -139,13 +140,13 @@ namespace SilklessCoop
                 _playerCount = int.Parse(metadataParts[0]);
 
                 string scene = contentParts[0];
-                float posX = parseFloat(contentParts[1]);
-                float posY = parseFloat(contentParts[2]);
-                float posZ = parseFloat(contentParts[3]);
+                float posX = stof(contentParts[1]);
+                float posY = stof(contentParts[2]);
+                float posZ = stof(contentParts[3]);
                 int spriteId = int.Parse(contentParts[4]);
-                float scaleX = parseFloat(contentParts[5]);
-                float vX = parseFloat(contentParts[6]);
-                float vY = parseFloat(contentParts[7]);
+                float scaleX = stof(contentParts[5]);
+                float vX = stof(contentParts[6]);
+                float vY = stof(contentParts[7]);
 
                 bool compassActive = false;
                 float compassX = 0;
@@ -154,8 +155,8 @@ namespace SilklessCoop
                 if (Config.SyncCompasses && contentParts.Length > 8)
                 {
                     compassActive = contentParts[8] == "1";
-                    compassX = parseFloat(contentParts[9]);
-                    compassY = parseFloat(contentParts[10]);
+                    compassX = stof(contentParts[9]);
+                    compassY = stof(contentParts[10]);
                 }
 
                 bool sameScene = scene == SceneManager.GetActiveScene().name;
@@ -188,6 +189,8 @@ namespace SilklessCoop
                         _playerObjects[id].transform.localScale = new Vector3(scaleX, 1, 1);
                         _playerSprites[id].spriteId = spriteId;
                         _playerInterpolators[id].velocity = new Vector3(vX, vY, 0);
+
+                        Logger.LogInfo($"Updated player position to: {posX} {posY} {posZ}");
                     }
                     else
                     {
