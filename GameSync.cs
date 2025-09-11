@@ -127,7 +127,7 @@ namespace SilklessCoop
             {
                 if (!_setup) return;
 
-                // if (Config.PrintDebugOutput) Logger.LogInfo($"Applying update {data}...");
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Applying update {data}...");
 
                 UpdateUI();
 
@@ -200,7 +200,7 @@ namespace SilklessCoop
                         newObject.transform.localScale = new Vector3(scaleX, 1, 1);
 
                         tk2dSprite newSprite = tk2dSprite.AddComponent(newObject, _hornetSprite.Collection, 0);
-                        newSprite.color = new Color(1, 1, 1, 0.7f);
+                        newSprite.color = new Color(1, 1, 1, Config.PlayerOpacity);
 
                         SimpleInterpolator newInterpolator = newObject.AddComponent<SimpleInterpolator>();
                         newInterpolator.velocity = new Vector3(vX, vY, 0);
@@ -221,7 +221,7 @@ namespace SilklessCoop
                         {
                             // update compass
                             _playerCompasses[id].transform.localPosition = new Vector3(compassX, compassY, _compass.transform.localPosition.z + 0.001f);
-                            _playerCompassSprites[id].color = new Color(1, 1, 1, 0.7f);
+                            _playerCompassSprites[id].color = new Color(1, 1, 1, Config.ActiveCompassOpacity);
                         }
                         else
                         {
@@ -232,7 +232,7 @@ namespace SilklessCoop
                             newObject.SetName("SilklessCompass");
                             newObject.transform.localPosition = new Vector3(compassX, compassY, _compass.transform.localPosition.z + 0.001f);
                             tk2dSprite newSprite = newObject.GetComponent<tk2dSprite>();
-                            newSprite.color = new Color(1, 1, 1, 0.7f);
+                            newSprite.color = new Color(1, 1, 1, Config.ActiveCompassOpacity);
 
                             _playerCompasses[id] = newObject;
                             _playerCompassSprites[id] = newSprite;
@@ -243,7 +243,7 @@ namespace SilklessCoop
                     else
                     {
                         if (_playerCompasses[id] != null)
-                            _playerCompassSprites[id].color = new Color(1, 1, 1, 0.35f);
+                            _playerCompassSprites[id].color = new Color(1, 1, 1, Config.InactiveCompassOpacity);
                     }
                 }
             } catch (Exception e)
