@@ -5,7 +5,8 @@ namespace SilklessCoop
     public enum ConnectionType
     {
         ECHOSERVER,
-        STEAM_P2P
+        STEAM_P2P,
+        DEBUG
     };
 
     internal class ModConfig
@@ -22,5 +23,7 @@ namespace SilklessCoop
         public float PlayerOpacity;
         public float ActiveCompassOpacity;
         public float InactiveCompassOpacity;
+
+        public string Version;
     };
 }

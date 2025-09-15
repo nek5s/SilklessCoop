@@ -1,7 +1,7 @@
-﻿using Steamworks;
+﻿using SilklessCoop.Connectors;
+using Steamworks;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SilklessCoop
 {
@@ -17,10 +17,11 @@ namespace SilklessCoop
         // state
         private ELobbyRole _role;
         private CSteamID _ownId;
-        private CSteamID _hostId;
         private HashSet<CSteamID> _connected;
 
-        public override string GetName() { return "Steam connector"; }
+        public override string GetConnectorName() { return "Steam connector"; }
+
+        public override string GetId() { return SteamUser.GetSteamID().ToString(); }
 
         public override bool Init()
         {
@@ -48,7 +49,6 @@ namespace SilklessCoop
 
                 _role = ELobbyRole.DEFAULT;
                 _ownId = SteamUser.GetSteamID();
-                _hostId = CSteamID.Nil;
                 _connected = new HashSet<CSteamID>();
 
                 SteamFriends.SetRichPresence("connect", _ownId.ToString());
@@ -66,11 +66,13 @@ namespace SilklessCoop
 
         public override void Disable()
         {
-            if (!Active) return;
+            if (!Enabled) return;
 
             Logger.LogInfo("Disabling steam connector...");
             try
             {
+                base.Disable();
+
                 _gameRichPresenceJoinRequested.Unregister();
                 _gameRichPresenceJoinRequested = null;
                 _p2pSessionRequest.Unregister();
@@ -83,8 +85,6 @@ namespace SilklessCoop
 
                 SteamFriends.ClearRichPresence();
 
-                base.Disable();
-
                 Logger.LogInfo("Steam connector has been disabled successfully.");
             }
             catch (Exception e)
@@ -95,7 +95,7 @@ namespace SilklessCoop
 
         protected override void Update()
         {
-            if (Initialized && Active) SteamAPI.RunCallbacks();
+            if (Initialized && Enabled) SteamAPI.RunCallbacks();
 
             base.Update();
         }
@@ -117,7 +117,8 @@ namespace SilklessCoop
                 return;
             }
 
-            _hostId = request.m_steamIDFriend;
+            Connected = true;
+
             _connected.Add(request.m_steamIDFriend);
 
             SteamFriends.SetRichPresence("connect", request.m_steamIDFriend.ToString());
@@ -148,7 +149,8 @@ namespace SilklessCoop
                 return;
             }
 
-            _hostId = CSteamID.Nil;
+            Connected = true;
+
             _connected.Add(request.m_steamIDRemote);
 
             if (_role != ELobbyRole.SERVER)
@@ -170,11 +172,12 @@ namespace SilklessCoop
                 return;
             }
 
-            _hostId = CSteamID.Nil;
             _connected.Remove(fail.m_steamIDRemote);
 
             if (_connected.Count == 0)
             {
+                Connected = false;
+
                 if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to DEFAULT.");
                 _role = ELobbyRole.DEFAULT;
                 SteamFriends.SetRichPresence("connect", _ownId.ToString());
@@ -187,36 +190,18 @@ namespace SilklessCoop
         {
             try
             {
-                // send
-                string updateData = _sync.GetUpdateContent();
-                if (updateData != null)
-                {
-                    byte[] updateMsg = Encoding.UTF8.GetBytes($"{_ownId}::1::{updateData}");
-                    foreach (CSteamID id in _connected) SteamNetworking.SendP2PPacket(id, updateMsg, (uint) updateMsg.Length, EP2PSend.k_EP2PSendReliable);
-                }
-
-                // receive
                 while (SteamNetworking.IsP2PPacketAvailable(out uint msgSize))
                 {
-                    byte[] buffer = new byte[msgSize];
+                    byte[] bytes = new byte[msgSize];
 
-                    if (SteamNetworking.ReadP2PPacket(buffer, msgSize, out _, out CSteamID sender))
+                    if (SteamNetworking.ReadP2PPacket(bytes, msgSize, out _, out CSteamID sender))
                     {
-                        string data = Encoding.UTF8.GetString(buffer);
-
-                        string[] parts = data.Split("::");
-
-                        string metadata = $"{_connected.Count}";
-
-                        data = $"{parts[0]}::{metadata}::{parts[2]}";
-
-                        _sync.ApplyUpdate(data);
+                        OnData(bytes);
 
                         if (_role == ELobbyRole.SERVER)
                         {
                             foreach (CSteamID id in _connected)
-                                if (id != sender)
-                                    SteamNetworking.SendP2PPacket(id, buffer, (uint)buffer.Length, EP2PSend.k_EP2PSendReliable);
+                                if (id != sender) SteamNetworking.SendP2PPacket(id, bytes, msgSize, EP2PSend.k_EP2PSendReliable);
                         }
                     }
                 }
@@ -226,6 +211,14 @@ namespace SilklessCoop
                 Logger.LogError($"Error during tick: {e}");
                 Disable();
             }
+        }
+
+        public override void SendData(byte[] data)
+        {
+            if (!Initialized || !Enabled) return;
+
+            foreach (CSteamID id in _connected)
+                SteamNetworking.SendP2PPacket(id, data, (uint)data.Length, EP2PSend.k_EP2PSendReliable);
         }
     }
 }
