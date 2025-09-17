@@ -20,7 +20,7 @@ namespace SilklessCoop
         private CSteamID _hostId;
         private HashSet<CSteamID> _connected;
 
-        public override string GetName() { return "Steam connector"; }
+        public override string GetConnectorName() { return "Steam connector"; }
 
         public override bool Init()
         {

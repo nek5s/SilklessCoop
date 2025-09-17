@@ -15,7 +15,7 @@ namespace SilklessCoop
 
         protected float _tickTimeout;
 
-        public abstract string GetName();
+        public abstract string GetConnectorName();
 
         protected void Start()
         {

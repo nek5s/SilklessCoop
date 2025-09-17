@@ -16,7 +16,7 @@ namespace SilklessCoop
         private Thread _rxThread;
         private Queue<string> _rxQueue;
 
-        public override string GetName() { return "Standalone connector"; }
+        public override string GetConnectorName() { return "Standalone connector"; }
 
         public override bool Init()
         {

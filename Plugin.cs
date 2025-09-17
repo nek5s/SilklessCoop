@@ -21,8 +21,7 @@ public class Plugin : BaseUnityPlugin
         config.EchoServerPort = Config.Bind<int>("Standalone", "Server Port", 45565, "Port of the standalone server.").Value;
 
         config.PlayerOpacity = Config.Bind<float>("Visuals", "Player Opacity", 0.7f, "Opacity of other players (0.0f = invisible, 1.0f = as opaque as yourself).").Value;
-        config.ActiveCompassOpacity = Config.Bind<float>("Visuals", "Active Compass Opacity", 0.7f, "Opacity of other players' compasses while they have their map open.").Value;
-        config.InactiveCompassOpacity = Config.Bind<float>("Visuals", "Inactive Compass Opacity", 0.35f, "Opacity of other players' compasses while they have their map closed.").Value;
+        config.CompassOpacity = Config.Bind<float>("Visuals", "Active Compass Opacity", 0.7f, "Opacity of other players' compasses while they have their map open.").Value;
 
         // set up mod
         Logger.LogInfo($"Loading {MyPluginInfo.PLUGIN_GUID}...");
@@ -46,11 +45,11 @@ public class Plugin : BaseUnityPlugin
 
         if (!c.Init())
         {
-            Logger.LogError($"{c.GetName()} has failed to initialize!");
+            Logger.LogError($"{c.GetConnectorName()} has failed to initialize!");
             return;
         }
 
-        Logger.LogInfo($"{c.GetName()} has initialized successfully.");
+        Logger.LogInfo($"{c.GetConnectorName()} has initialized successfully.");
 
         Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} has initialized successfully.");
     }

@@ -27,6 +27,7 @@ namespace SilklessCoop
         private GameObject _hornetObject = null;
         private tk2dSprite _hornetSprite = null;
         private Rigidbody2D _hornetRigidbody = null;
+        private Dictionary<string, tk2dSpriteCollectionData> _collectionCache = new Dictionary<string, tk2dSpriteCollectionData>();
 
         // sprite sync - others
         private Dictionary<string, GameObject> _playerObjects = new Dictionary<string, GameObject>();
@@ -42,6 +43,7 @@ namespace SilklessCoop
         private GameObject _mainQuests = null;
         private GameObject _map = null;
         private GameObject _compass = null;
+        private GameMap _gameMap = null;
 
         // map sync - others
         private Dictionary<string, GameObject> _playerCompasses = new Dictionary<string, GameObject>();
@@ -55,6 +57,12 @@ namespace SilklessCoop
             if (!_hornetObject) _hornetObject = GameObject.Find("Hero_Hornet(Clone)");
             if (!_hornetObject) { _setup = false; return; }
 
+            if (_collectionCache.Count == 0)
+            {
+                foreach (tk2dSpriteCollectionData c in Resources.FindObjectsOfTypeAll<tk2dSpriteCollectionData>())
+                    _collectionCache[c.spriteCollectionGUID] = c;
+            }
+
             if (!_hornetSprite) _hornetSprite = _hornetObject.GetComponent<tk2dSprite>();
             if (!_hornetSprite) { _setup = false; return; }
 
@@ -64,6 +72,9 @@ namespace SilklessCoop
             if (!_map) _map = GameObject.Find("Game_Map_Hornet");
             if (!_map) _map = GameObject.Find("Game_Map_Hornet(Clone)");
             if (!_map) { _setup = false; return; }
+
+            if (!_gameMap) _gameMap = _map.GetComponent<GameMap>();
+            if (!_gameMap) { _setup = false; return; }
 
             if (!_compass) _compass = _map.transform.Find("Compass Icon")?.gameObject;
             if (!_compass) { _setup = false; return; }
@@ -95,11 +106,14 @@ namespace SilklessCoop
         {
             if (!_setup) return null;
 
+            _gameMap.PositionCompassAndCorpse();
+
             string scene = SceneManager.GetActiveScene().name;
             float posX = _hornetObject.transform.position.x;
             float posY = _hornetObject.transform.position.y;
             float posZ = _hornetObject.transform.position.z;
             int spriteId = _hornetSprite.spriteId;
+            string spriteCollection = _hornetSprite.Collection.spriteCollectionGUID;
             float scaleX = _hornetObject.transform.localScale.x;
             float vX = _hornetRigidbody.linearVelocity.x;
             float vY = _hornetRigidbody.linearVelocity.y;
@@ -115,7 +129,7 @@ namespace SilklessCoop
                 compassY = _compass.transform.localPosition.y;
             }
 
-            string baseData = $"{scene}:{posX}:{posY}:{posZ}:{spriteId}:{scaleX}:{vX}:{vY}";
+            string baseData = $"{scene}:{posX}:{posY}:{posZ}:{spriteId}:{spriteCollection}:{scaleX}:{vX}:{vY}";
             string compassData = Config.SyncCompasses ? $":{compassActive}:{compassX}:{compassY}" : "";
             string data = $"{baseData}{compassData}";
 
@@ -144,9 +158,10 @@ namespace SilklessCoop
                 float posY = stof(contentParts[2]);
                 float posZ = stof(contentParts[3]);
                 int spriteId = int.Parse(contentParts[4]);
-                float scaleX = stof(contentParts[5]);
-                float vX = stof(contentParts[6]);
-                float vY = stof(contentParts[7]);
+                string spriteCollection = contentParts[5];
+                float scaleX = stof(contentParts[6]);
+                float vX = stof(contentParts[7]);
+                float vY = stof(contentParts[8]);
 
                 bool compassActive = false;
                 float compassX = 0;
@@ -187,6 +202,7 @@ namespace SilklessCoop
                         // update player
                         _playerObjects[id].transform.position = new Vector3(posX, posY, posZ + 0.001f);
                         _playerObjects[id].transform.localScale = new Vector3(scaleX, 1, 1);
+                        _playerSprites[id].Collection = _collectionCache[spriteCollection];
                         _playerSprites[id].spriteId = spriteId;
                         _playerInterpolators[id].velocity = new Vector3(vX, vY, 0);
                     }
@@ -222,7 +238,7 @@ namespace SilklessCoop
                         {
                             // update compass
                             _playerCompasses[id].transform.localPosition = new Vector3(compassX, compassY, _compass.transform.localPosition.z + 0.001f);
-                            _playerCompassSprites[id].color = new Color(1, 1, 1, Config.ActiveCompassOpacity);
+                            _playerCompassSprites[id].color = new Color(1, 1, 1, Config.CompassOpacity);
                         }
                         else
                         {
@@ -233,7 +249,7 @@ namespace SilklessCoop
                             newObject.SetName("SilklessCompass");
                             newObject.transform.localPosition = new Vector3(compassX, compassY, _compass.transform.localPosition.z + 0.001f);
                             tk2dSprite newSprite = newObject.GetComponent<tk2dSprite>();
-                            newSprite.color = new Color(1, 1, 1, Config.ActiveCompassOpacity);
+                            newSprite.color = new Color(1, 1, 1, Config.CompassOpacity);
 
                             _playerCompasses[id] = newObject;
                             _playerCompassSprites[id] = newSprite;
@@ -243,8 +259,7 @@ namespace SilklessCoop
                     }
                     else
                     {
-                        if (_playerCompasses[id] != null)
-                            _playerCompassSprites[id].color = new Color(1, 1, 1, Config.InactiveCompassOpacity);
+                        if (_playerCompasses[id] != null) Destroy(_playerCompasses[id]);
                     }
                 }
             } catch (Exception e)
