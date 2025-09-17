@@ -21,7 +21,7 @@ public class Plugin : BaseUnityPlugin
         config.EchoServerPort = Config.Bind<int>("Standalone", "Server Port", 45565, "Port of the standalone server.").Value;
 
         config.PlayerOpacity = Config.Bind<float>("Visuals", "Player Opacity", 0.7f, "Opacity of other players (0.0f = invisible, 1.0f = as opaque as yourself).").Value;
-        config.CompassOpacity = Config.Bind<float>("Visuals", "Active Compass Opacity", 0.7f, "Opacity of other players' compasses while they have their map open.").Value;
+        config.CompassOpacity = Config.Bind<float>("Visuals", "Compass Opacity", 0.7f, "Opacity of other players' compasses while they have their map open.").Value;
 
         // set up mod
         Logger.LogInfo($"Loading {MyPluginInfo.PLUGIN_GUID}...");
