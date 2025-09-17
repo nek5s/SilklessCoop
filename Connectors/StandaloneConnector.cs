@@ -62,6 +62,7 @@ namespace SilklessCoop.Connectors
                     Connected = true;
 
                     base.Enable();
+                    _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
 
                     Logger.LogInfo($"{GetConnectorName()} has been enabled successfully.");
                 });

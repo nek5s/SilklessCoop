@@ -19,12 +19,14 @@
             Logger.LogInfo($"Enabling {GetConnectorName()}...");
             Connected = true;
             base.Enable();
+            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
             Logger.LogInfo($"{GetConnectorName()} has been enabled successfully.");
         }
 
         public override void Disable()
         {
             Logger.LogInfo($"Disabling {GetConnectorName()}...");
+            _interface.SendPacket(new PacketTypes.LeavePacket { id = GetId() });
             Connected = false;
             base.Disable();
             Logger.LogInfo($"{GetConnectorName()} has been disabled successfully.");

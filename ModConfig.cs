@@ -21,8 +21,7 @@ namespace SilklessCoop
         public int EchoServerPort;
 
         public float PlayerOpacity;
-        public float ActiveCompassOpacity;
-        public float InactiveCompassOpacity;
+        public float CompassOpacity;
 
         public string Version;
     };

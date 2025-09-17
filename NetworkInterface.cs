@@ -103,6 +103,8 @@ namespace SilklessCoop
 
                 _connector.SendData(bytes);
 
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Sent packet with key={key}");
+
                 Logger.LogInfo($"Sent {size} bytes");
             }
             catch (Exception e)
@@ -117,6 +119,8 @@ namespace SilklessCoop
             {
                 byte key = bytes[0];
                 byte[] msg = bytes.Skip(1).ToArray();
+
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Received packet with key={key}");
 
                 if (!_keyToType.TryGetValue(key, out Type type) || type == null) return;
                 if (!_handlers.TryGetValue(type, out Action<IPacket> handler) || handler == null) return;

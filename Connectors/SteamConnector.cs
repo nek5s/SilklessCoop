@@ -2,6 +2,7 @@
 using Steamworks;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SilklessCoop
 {
@@ -43,19 +44,22 @@ namespace SilklessCoop
             Logger.LogInfo("Enabling steam connector...");
             try
             {
-                _gameRichPresenceJoinRequested = Callback<GameRichPresenceJoinRequested_t>.Create(OnGameRichPresenceJoinRequested);
-                _p2pSessionRequest = Callback<P2PSessionRequest_t>.Create(OnP2PSessionRequest);
-                _p2pSessionConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnP2PSessionConnectFail);
+                Task.Run(() =>
+                {
+                    _gameRichPresenceJoinRequested = Callback<GameRichPresenceJoinRequested_t>.Create(OnGameRichPresenceJoinRequested);
+                    _p2pSessionRequest = Callback<P2PSessionRequest_t>.Create(OnP2PSessionRequest);
+                    _p2pSessionConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnP2PSessionConnectFail);
 
-                _role = ELobbyRole.DEFAULT;
-                _ownId = SteamUser.GetSteamID();
-                _connected = new HashSet<CSteamID>();
+                    _role = ELobbyRole.DEFAULT;
+                    _ownId = SteamUser.GetSteamID();
+                    _connected = new HashSet<CSteamID>();
 
-                SteamFriends.SetRichPresence("connect", _ownId.ToString());
+                    SteamFriends.SetRichPresence("connect", _ownId.ToString());
 
-                base.Enable();
+                    base.Enable();
 
-                Logger.LogInfo("Steam connector has been enabled successfully.");
+                    Logger.LogInfo("Steam connector has been enabled successfully.");
+                });
             } catch (Exception e)
             {
                 Logger.LogError($"Error while enabling steam connector: {e}");
@@ -71,21 +75,26 @@ namespace SilklessCoop
             Logger.LogInfo("Disabling steam connector...");
             try
             {
-                base.Disable();
+                if (_connected.Count > 0) _interface.SendPacket(new PacketTypes.LeavePacket { id = GetId() });
 
-                _gameRichPresenceJoinRequested.Unregister();
-                _gameRichPresenceJoinRequested = null;
-                _p2pSessionRequest.Unregister();
-                _p2pSessionRequest = null;
-                _p2pSessionConnectFail.Unregister();
-                _p2pSessionConnectFail = null;
+                Task.Run(() =>
+                {
+                    base.Disable();
 
-                foreach (CSteamID id in _connected)
-                    SteamNetworking.CloseP2PSessionWithUser(id);
+                    _gameRichPresenceJoinRequested.Unregister();
+                    _gameRichPresenceJoinRequested = null;
+                    _p2pSessionRequest.Unregister();
+                    _p2pSessionRequest = null;
+                    _p2pSessionConnectFail.Unregister();
+                    _p2pSessionConnectFail = null;
 
-                SteamFriends.ClearRichPresence();
+                    foreach (CSteamID id in _connected)
+                        SteamNetworking.CloseP2PSessionWithUser(id);
 
-                Logger.LogInfo("Steam connector has been disabled successfully.");
+                    SteamFriends.ClearRichPresence();
+
+                    Logger.LogInfo("Steam connector has been disabled successfully.");
+                });
             }
             catch (Exception e)
             {
@@ -129,6 +138,8 @@ namespace SilklessCoop
                 _role = ELobbyRole.CLIENT;
             }
 
+            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
+
             Logger.LogInfo($"Successfully connected to {request.m_steamIDFriend}.");
         }
 
@@ -158,6 +169,8 @@ namespace SilklessCoop
                 if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to SERVER.");
                 _role = ELobbyRole.SERVER;
             }
+
+            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
 
             Logger.LogInfo($"Successfully received connection from {request.m_steamIDRemote}.");
         }

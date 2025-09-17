@@ -31,6 +31,7 @@ namespace SilklessCoop
 
         // map sync - self
         private GameObject _map = null;
+        private GameMap _gameMap = null;
         private GameObject _mainQuests = null;
         private GameObject _compass = null;
 
@@ -78,15 +79,13 @@ namespace SilklessCoop
             if (!_map) _map = GameObject.Find("Game_Map_Hornet(Clone)");
             if (_map && !_mainQuests) _mainQuests = _map.transform.Find("Main Quest Pins")?.gameObject;
             if (_map && !_compass) _compass = _map.transform.Find("Compass Icon")?.gameObject;
+            if (_map && !_gameMap) _gameMap = _map.GetComponent<GameMap>();
 
             UpdateUI();
         }
 
         private void UpdateUI()
         {
-            foreach (GameObject g in _playerCompasses.Values)
-                if (g) g.SetActive(true);
-
             if (_compass)
             {
                 while (_playerCountPins.Count < _playerIds.Count)
@@ -120,7 +119,7 @@ namespace SilklessCoop
 
             SendHornetPositionPacket();
             SendHornetAnimationPacket();
-            SendCompassPositionPacket();
+            if (Config.SyncCompasses) SendCompassPositionPacket();
         }
 
         public void Reset()
@@ -169,52 +168,42 @@ namespace SilklessCoop
         }
         private void OnHornetPositionPacket(PacketTypes.HornetPositionPacket packet)
         {
-            _playerIds.Add(packet.id);
-
             if (!_hornetObject) return;
 
-            if (packet.scene != SceneManager.GetActiveScene().name)
+            if (!_playerObjects.TryGetValue(packet.id, out GameObject playerObject) || !playerObject)
             {
-                if (_playerCompasses.TryGetValue(packet.id, out GameObject playerObject) && playerObject)
-                {
-                    Destroy(playerObject);
-                }
-            } else
+                // create player
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Creating new player object for player {packet.id}...");
+
+                GameObject newObject = new GameObject();
+                newObject.SetName($"SilklessCooperator - {packet.id}");
+                newObject.transform.SetParent(transform);
+                newObject.transform.position = new Vector3(packet.posX, packet.posY, _hornetObject.transform.position.z + 0.001f);
+                newObject.transform.localScale = new Vector3(packet.scaleX, 1, 1);
+
+                tk2dSprite newSprite = tk2dSprite.AddComponent(newObject, _hornetSprite.Collection, _hornetSprite.spriteId);
+                newSprite.color = new Color(1, 1, 1, Config.PlayerOpacity);
+
+                SimpleInterpolator newInterpolator = newObject.AddComponent<SimpleInterpolator>();
+                newInterpolator.velocity = new Vector3(packet.vX, packet.vY, 0);
+
+                _playerObjects[packet.id] = newObject;
+                _playerSprites[packet.id] = newSprite;
+                _playerInterpolators[packet.id] = newInterpolator;
+                
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Created new player object for player {packet.id}.");
+            }
+            else
             {
-                if (!_playerObjects.TryGetValue(packet.id, out GameObject playerObject) || !playerObject)
-                {
-                    // create player
-                    if (Config.PrintDebugOutput) Logger.LogInfo($"Creating new player object for player {packet.id}...");
+                if (!_playerInterpolators.TryGetValue(packet.id, out SimpleInterpolator playerInterpolator)) return;
 
-                    GameObject newObject = new GameObject();
-                    newObject.SetName($"SilklessCooperator - {packet.id}");
-                    newObject.transform.SetParent(transform);
-                    newObject.transform.position = new Vector3(packet.posX, packet.posY, _hornetObject.transform.position.z + 0.001f);
-                    newObject.transform.localScale = new Vector3(packet.scaleX, 1, 1);
+                // update player
+                playerObject.transform.position = new Vector3(packet.posX, packet.posY, _hornetObject.transform.position.z + 0.001f);
+                playerObject.transform.localScale = new Vector3(packet.scaleX, 1, 1);
+                playerObject.SetActive(packet.scene == SceneManager.GetActiveScene().name);
+                playerInterpolator.velocity = new Vector3(packet.vX, packet.vY, 0);
 
-                    tk2dSprite newSprite = tk2dSprite.AddComponent(newObject, _hornetSprite.Collection, _hornetSprite.spriteId);
-                    newSprite.color = new Color(1, 1, 1, Config.PlayerOpacity);
-
-                    SimpleInterpolator newInterpolator = newObject.AddComponent<SimpleInterpolator>();
-                    newInterpolator.velocity = new Vector3(packet.vX, packet.vY, 0);
-
-                    _playerObjects[packet.id] = newObject;
-                    _playerSprites[packet.id] = newSprite;
-                    _playerInterpolators[packet.id] = newInterpolator;
-
-                    if (Config.PrintDebugOutput) Logger.LogInfo($"Created new player object for player {packet.id}.");
-                }
-                else
-                {
-                    if (!_playerInterpolators.TryGetValue(packet.id, out SimpleInterpolator playerInterpolator)) return;
-
-                    // update player
-                    playerObject.transform.position = new Vector3(packet.posX, packet.posY, _hornetObject.transform.position.z + 0.001f);
-                    playerObject.transform.localScale = new Vector3(packet.scaleX, 1, 1);
-                    playerInterpolator.velocity = new Vector3(packet.vX, packet.vY, 0);
-
-                    if (Config.PrintDebugOutput) Logger.LogInfo($"Updated position of player {packet.id} to ({packet.posX} {packet.posY})");
-                }
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Updated position of player {packet.id} to ({packet.posX} {packet.posY})");
             }
         }
 
@@ -231,8 +220,6 @@ namespace SilklessCoop
         }
         private void OnHornetAnimationPacket(PacketTypes.HornetAnimationPacket packet)
         {
-            _playerIds.Add(packet.id);
-
             if (!_hornetObject) return;
             if (!_playerSprites.TryGetValue(packet.id, out tk2dSprite playerSprite) || !playerSprite) return;
             if (!_collectionCache.TryGetValue(packet.collectionGuid, out tk2dSpriteCollectionData collectionData) || !collectionData) return;
@@ -245,34 +232,36 @@ namespace SilklessCoop
     
         private void SendCompassPositionPacket()
         {
-            if (!_hornetObject || !_compass) return;
+            if (!_map || !_gameMap || !_compass) return;
+
+            _gameMap.PositionCompassAndCorpse();
 
             _network.SendPacket(new PacketTypes.CompassPositionPacket
             {
                 id = _id,
-                active = _mainQuests.activeSelf,
+                active = _compass.activeSelf,
                 posX = _compass.transform.localPosition.x,
                 posY = _compass.transform.localPosition.y,
             });
         }
         private void OnCompassPositionPacket(PacketTypes.CompassPositionPacket packet)
         {
-            _playerIds.Add(packet.id);
-
             if (!_map || !_compass || !_mainQuests) return;
+
             if (!_playerCompasses.TryGetValue(packet.id, out GameObject playerCompass) || !playerCompass) {
                 // create compass
                 if (Config.PrintDebugOutput) Logger.LogInfo($"Creating new compass object for player {packet.id}...");
 
                 GameObject newObject = Instantiate(_compass, _map.transform);
-                newObject.SetActive(_mainQuests.activeSelf);
+                newObject.SetActive(packet.active);
                 newObject.SetName($"SilklessCompass - {packet.id}");
                 newObject.transform.localPosition = new Vector2(packet.posX, packet.posY);
 
                 tk2dSprite newSprite = newObject.GetComponent<tk2dSprite>();
-                newSprite.color = new Color(1, 1, 1, Config.ActiveCompassOpacity);
+                newSprite.color = new Color(1, 1, 1, Config.CompassOpacity);
 
                 _playerCompasses[packet.id] = newObject;
+                _playerCompassSprites[packet.id] = newSprite;
 
                 if (Config.PrintDebugOutput) Logger.LogInfo($"Created new player object for player {packet.id}.");
             } else
@@ -281,9 +270,9 @@ namespace SilklessCoop
 
                 // update compass
                 playerCompass.transform.localPosition = new Vector2(packet.posX, packet.posY);
-                compassSprite.color = new Color(1, 1, 1, packet.active ? Config.ActiveCompassOpacity : Config.InactiveCompassOpacity);
+                playerCompass.SetActive(packet.active);
 
-                if (Config.PrintDebugOutput) Logger.LogInfo($"Updated position of compass {packet.id} to ({packet.posX} {packet.posY})");
+                if (Config.PrintDebugOutput) Logger.LogInfo($"Updated position of compass {packet.id} to ({packet.posX} {packet.posY}) active={packet.active}");
             }
         }
     }

@@ -47,13 +47,10 @@ namespace SilklessCoop.Connectors
         public virtual void Enable()
         {
             Enabled = true;
-
-            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
         }
 
         public virtual void Disable()
         {
-            _interface.SendPacket(new PacketTypes.LeavePacket { id = GetId() });
             _sync.Reset();
 
             Enabled = false;
