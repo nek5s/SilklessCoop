@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SilklessCoop.Global;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
@@ -36,20 +37,21 @@ namespace SilklessCoop.Connectors
 
         public override bool Init()
         {
-            Logger.LogInfo($"Initializing {GetConnectorName()}...");
-            Logger.LogInfo($"{GetConnectorName()} has been initialized successfully.");
+            LogUtil.LogInfo($"Initializing {GetConnectorName()}...");
+            LogUtil.LogInfo($"{GetConnectorName()} has been initialized successfully.", true);
 
             return base.Init();
         }
 
         public override void Enable()
         {
-            Logger.LogInfo($"Enabling {GetConnectorName()}...");
             try
             {
+                LogUtil.LogInfo($"Enabling {GetConnectorName()}...");
+
                 Task.Run(() =>
                 {
-                    _socket = new TcpClient(Config.EchoServerIP, Config.EchoServerPort);
+                    _socket = new TcpClient(ModConfig.EchoServerIP, ModConfig.EchoServerPort);
 
                     _stream = _socket.GetStream();
                     _stream.ReadTimeout = 500;
@@ -62,13 +64,12 @@ namespace SilklessCoop.Connectors
                     Connected = true;
 
                     base.Enable();
-                    _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
 
-                    Logger.LogInfo($"{GetConnectorName()} has been enabled successfully.");
+                    LogUtil.LogInfo($"{GetConnectorName()} has been enabled successfully.", true);
                 });
             } catch (Exception e)
             {
-                Logger.LogError($"Error while enabling {GetConnectorName()}: {e}");
+                LogUtil.LogError(e.ToString());
 
                 Disable();
             }
@@ -76,13 +77,15 @@ namespace SilklessCoop.Connectors
 
         public override void Disable()
         {
-            if (!Enabled) return;
-
-            Logger.LogInfo($"Disabling {GetConnectorName()}...");
             try
             {
+                if (!Enabled) return;
+
+                LogUtil.LogInfo($"Disabling {GetConnectorName()}...");
+
                 Task.Run(() =>
                 {
+                    Connected = false;
                     base.Disable();
 
                     _rxRunning = false;
@@ -92,26 +95,28 @@ namespace SilklessCoop.Connectors
 
                     Connected = false;
 
-                    Logger.LogInfo($"{GetConnectorName()} has been disabled successfully.");
+                    LogUtil.LogInfo($"{GetConnectorName()} has been disabled successfully.", true);
+
+                    _sync.Reset();
                 });
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error while disabling {GetConnectorName()}: {e}");
+                LogUtil.LogError(e.ToString());
             }
         }
 
         protected override void Tick()
         {
-            if (!Initialized || !Enabled || !Connected) return;
-
             try
             {
+                if (!Initialized || !Enabled || !Connected) return;
+
                 while (_rxQueue.Count > 0) OnData(_rxQueue.Dequeue());
             }
             catch (Exception e)
             {
-                Logger.LogError($"!Error during tick: {e}");
+                LogUtil.LogError(e.ToString());
             }
         }
 
@@ -125,9 +130,9 @@ namespace SilklessCoop.Connectors
                 {
                     try
                     {
-                        if (_stream == null) { Logger.LogError("no stream"); break; }
-                        if (_socket == null) { Logger.LogError("no socket"); break; }
-                        if (_socket.Client.Poll(0, SelectMode.SelectRead) && _socket.Available == 0) { Logger.LogError("no data"); break; }
+                        if (_stream == null) { LogUtil.LogError("Stream not found!"); break; }
+                        if (_socket == null) { LogUtil.LogError("Socket not found!"); break; }
+                        if (_socket.Client.Poll(0, SelectMode.SelectRead) && _socket.Available == 0) { LogUtil.LogError("Data not found!"); break; }
 
                         if (!_stream.CanRead)
                         {
@@ -152,7 +157,7 @@ namespace SilklessCoop.Connectors
                         }
                         else
                         {
-                            Logger.LogError($"Error while reading incoming data {e}!");
+                            LogUtil.LogError(e.ToString());
                             
                             Disable();
                             break;
@@ -160,31 +165,38 @@ namespace SilklessCoop.Connectors
                     }
                 }
 
-                Logger.LogInfo("Receive thread ended.");
+                LogUtil.LogInfo("Receive thread ended.");
 
                 if (_rxRunning) Disable();
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error in receive thread {e}!");
+                LogUtil.LogError(e.ToString());
                 Disable();
             }
         }
 
         public override void SendData(byte[] data)
         {
-            if (!Initialized || !Enabled) { Logger.LogError($"{GetConnectorName()} not ready to send yet!");  return; }
-            if (_socket == null || _stream == null) { Logger.LogError($"{GetConnectorName()} cannot send with missing socket!");  return; }
+            try
+            {
+                if (!Initialized || !Enabled) { LogUtil.LogError($"Cannot send while disabled!");  return; }
+                if (_socket == null || _stream == null) { LogUtil.LogError($"Cannot send with missing socket!");  return; }
 
-            int size = 4 + data.Length;
-            byte[] bytes = new byte[size];
-            bytes[0] = (byte)((size      ) & 0xff);
-            bytes[1] = (byte)((size >>  8) & 0xff);
-            bytes[2] = (byte)((size >> 16) & 0xff);
-            bytes[3] = (byte)((size >> 24) & 0xff);
-            Array.Copy(data, 0, bytes, 4, data.Length);
+                int size = 4 + data.Length;
+                byte[] bytes = new byte[size];
+                bytes[0] = (byte)((size      ) & 0xff);
+                bytes[1] = (byte)((size >>  8) & 0xff);
+                bytes[2] = (byte)((size >> 16) & 0xff);
+                bytes[3] = (byte)((size >> 24) & 0xff);
+                Array.Copy(data, 0, bytes, 4, data.Length);
 
-            _stream.Write(bytes, 0, bytes.Length);
+                _stream.Write(bytes, 0, bytes.Length);
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+            }
         }
     }
 }

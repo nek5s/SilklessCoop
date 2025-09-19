@@ -1,5 +1,7 @@
 # SilklessCoop
 
+V2.3 - Code cleanup, stability and efficiency
+
 V2.2 - Added Menu UI
 
 V2.1 - Added Compass sync
@@ -13,9 +15,13 @@ A simple coop mod allowing you to see your friends in each others game.
 It currently features two modes:
 
 - Steam P2P (all players need the steam version)
-- Standalone (requires one player to set up a server)
+- Standalone (requires a dedicated server)
 
 View the Nexusmods page [here](https://www.nexusmods.com/hollowknightsilksong/mods/73).
+
+Get 30% off on your dedicated server using affiliate code SILKLESS:
+
+[![Nodecraft banner](./Media/nodecraft.jpg)](https://nodecraft.com/r/silkless)
 
 <details>
 <summary>
@@ -44,17 +50,10 @@ Note: player counter in the bottom left corner when viewing the quick map (holdi
 
 ## Installation
 
-- Download BepInEx 5(tested on 5.4.23.3) and extract it into your root game folder
 - Download SilklessCoop.zip and extract it into your root game folder
-
-## Known bugs
-
-- Some attacks have weird animations
-- Disconnecting and reconnecting will cause issues, fixed by everyone disconnecting and reconnecting together
 
 ## What's Next
 
-- Bugfixes
-- Syncing sounds
-- Arrow to other players on the border of the screen
-- Public servers hosted by me (scary)
+- More bugfixes
+- Sound sync (more shaw per shaw)
+- Arrow to other players on the border of the screen / better map indicators

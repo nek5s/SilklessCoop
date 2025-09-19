@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SilklessCoop
+namespace SilklessCoop.Components
 {
     internal class SimpleInterpolator : MonoBehaviour
     {

@@ -1,219 +1,142 @@
-﻿using SilklessCoop.Connectors;
+﻿using SilklessCoop.Global;
 using Steamworks;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
+using UnityEngine;
 
-namespace SilklessCoop
+namespace SilklessCoop.Connectors
 {
     internal class SteamConnector : Connector
     {
-        private enum ELobbyRole { DEFAULT, SERVER, CLIENT }
+        private bool _isHost = true;
+        private Dictionary<CSteamID, float> _lastSeen = new Dictionary<CSteamID, float>();
 
-        // callbacks
         private Callback<GameRichPresenceJoinRequested_t> _gameRichPresenceJoinRequested;
         private Callback<P2PSessionRequest_t> _p2pSessionRequest;
-        private Callback<P2PSessionConnectFail_t> _p2pSessionConnectFail;
 
-        // state
-        private ELobbyRole _role;
-        private CSteamID _ownId;
-        private HashSet<CSteamID> _connected;
+        public override string GetConnectorName() => "Steam connector";
 
-        public override string GetConnectorName() { return "Steam connector"; }
-
-        public override string GetId() { return SteamUser.GetSteamID().ToString(); }
+        public override string GetId() => SteamUser.GetSteamID().ToString();
 
         public override bool Init()
         {
-            Logger.LogInfo("Initializing steam connector...");
+            LogUtil.LogInfo($"Initializing {GetConnectorName()} ...");
 
             if (!SteamAPI.Init())
             {
-                Logger.LogError("SteamAPI failed to intialize!");
+                LogUtil.LogError("Steam API failed to initialize!");
                 return false;
             }
 
-            Logger.LogInfo("Steam connector has been initialized successfully.");
-
+            LogUtil.LogInfo($"{GetConnectorName()} initialized successfully.", true);
             return base.Init();
         }
 
         public override void Enable()
         {
-            Logger.LogInfo("Enabling steam connector...");
             try
             {
-                Task.Run(() =>
-                {
-                    _gameRichPresenceJoinRequested = Callback<GameRichPresenceJoinRequested_t>.Create(OnGameRichPresenceJoinRequested);
-                    _p2pSessionRequest = Callback<P2PSessionRequest_t>.Create(OnP2PSessionRequest);
-                    _p2pSessionConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnP2PSessionConnectFail);
+                LogUtil.LogInfo($"Enabling {GetConnectorName()}...");
 
-                    _role = ELobbyRole.DEFAULT;
-                    _ownId = SteamUser.GetSteamID();
-                    _connected = new HashSet<CSteamID>();
+                _gameRichPresenceJoinRequested = Callback<GameRichPresenceJoinRequested_t>.Create(OnGameRichPresenceJoinRequested);
+                _p2pSessionRequest = Callback<P2PSessionRequest_t>.Create(OnP2PSessionRequest);
 
-                    SteamFriends.SetRichPresence("connect", _ownId.ToString());
+                _lastSeen = new Dictionary<CSteamID, float>();
+                _isHost = true;
 
-                    base.Enable();
+                SteamFriends.SetRichPresence("connect", GetId());
 
-                    Logger.LogInfo("Steam connector has been enabled successfully.");
-                });
-            } catch (Exception e)
+                base.Enable();
+
+                LogUtil.LogInfo($"{GetConnectorName()} enabled successfully.", true);
+            }
+            catch (Exception e)
             {
-                Logger.LogError($"Error while enabling steam connector: {e}");
-
-                Disable();
+                LogUtil.LogError(e.ToString());
             }
         }
 
         public override void Disable()
         {
-            if (!Enabled) return;
-
-            Logger.LogInfo("Disabling steam connector...");
             try
             {
-                if (_connected.Count > 0) _interface.SendPacket(new PacketTypes.LeavePacket { id = GetId() });
+                LogUtil.LogInfo($"Disabling {GetConnectorName()}...");
 
-                Task.Run(() =>
-                {
-                    base.Disable();
+                base.Disable();
+                _gameRichPresenceJoinRequested.Unregister();
+                _p2pSessionRequest.Unregister();
 
-                    _gameRichPresenceJoinRequested.Unregister();
-                    _gameRichPresenceJoinRequested = null;
-                    _p2pSessionRequest.Unregister();
-                    _p2pSessionRequest = null;
-                    _p2pSessionConnectFail.Unregister();
-                    _p2pSessionConnectFail = null;
+                foreach (CSteamID id in _lastSeen.Keys)
+                    SteamNetworking.CloseP2PSessionWithUser(id);
+                _lastSeen.Clear();
 
-                    foreach (CSteamID id in _connected)
-                        SteamNetworking.CloseP2PSessionWithUser(id);
+                SteamFriends.ClearRichPresence();
 
-                    SteamFriends.ClearRichPresence();
+                LogUtil.LogInfo($"{GetConnectorName()} disabled successfully.", true);
 
-                    Logger.LogInfo("Steam connector has been disabled successfully.");
-                });
+                _sync.Reset();
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error while disabling steam connector: {e}");
+                LogUtil.LogError(e.ToString());
             }
         }
 
         protected override void Update()
         {
-            if (Initialized && Enabled) SteamAPI.RunCallbacks();
-
-            base.Update();
-        }
-
-        private void OnGameRichPresenceJoinRequested(GameRichPresenceJoinRequested_t request)
-        {
-            // called on the client
-            Logger.LogInfo($"Connecting to {request.m_steamIDFriend}...");
-
-            if (_role == ELobbyRole.SERVER)
+            try
             {
-                Logger.LogError("Cannot join as server.");
-                return;
-            }
+                if (Initialized && Enabled) SteamAPI.RunCallbacks();
 
-            if (!SteamNetworking.AcceptP2PSessionWithUser(request.m_steamIDFriend))
+                base.Update();
+            }
+            catch (Exception e)
             {
-                Logger.LogError($"Failed to accept connection to {request.m_steamIDFriend}!");
-                return;
+                LogUtil.LogError(e.ToString());
             }
-
-            Connected = true;
-
-            _connected.Add(request.m_steamIDFriend);
-
-            SteamFriends.SetRichPresence("connect", request.m_steamIDFriend.ToString());
-
-            if (_role != ELobbyRole.CLIENT)
-            {
-                if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to CLIENT.");
-                _role = ELobbyRole.CLIENT;
-            }
-
-            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
-
-            Logger.LogInfo($"Successfully connected to {request.m_steamIDFriend}.");
-        }
-
-        private void OnP2PSessionRequest(P2PSessionRequest_t request)
-        {
-            // called on the server
-            Logger.LogInfo($"Incoming connection from {request.m_steamIDRemote}...");
-
-            if (_role == ELobbyRole.CLIENT)
-            {
-                Logger.LogError("Cannot be joined as client!");
-                return;
-            }
-
-            if (!SteamNetworking.AcceptP2PSessionWithUser(request.m_steamIDRemote))
-            {
-                Logger.LogError($"Failed to accept connection from {request.m_steamIDRemote}!");
-                return;
-            }
-
-            Connected = true;
-
-            _connected.Add(request.m_steamIDRemote);
-
-            if (_role != ELobbyRole.SERVER)
-            {
-                if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to SERVER.");
-                _role = ELobbyRole.SERVER;
-            }
-
-            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
-
-            Logger.LogInfo($"Successfully received connection from {request.m_steamIDRemote}.");
-        }
-
-        private void OnP2PSessionConnectFail(P2PSessionConnectFail_t fail)
-        {
-            Logger.LogInfo($"Disconnecting from {fail.m_steamIDRemote} ({fail.m_eP2PSessionError})...");
-
-            if (!SteamNetworking.CloseP2PSessionWithUser(fail.m_steamIDRemote))
-            {
-                Logger.LogError($"Failed to disconnect from {fail.m_steamIDRemote}");
-                return;
-            }
-
-            _connected.Remove(fail.m_steamIDRemote);
-
-            if (_connected.Count == 0)
-            {
-                Connected = false;
-
-                if (Config.PrintDebugOutput) Logger.LogInfo("LobbyRole set to DEFAULT.");
-                _role = ELobbyRole.DEFAULT;
-                SteamFriends.SetRichPresence("connect", _ownId.ToString());
-            }
-
-            Logger.LogInfo($"Disconnected from {fail.m_steamIDRemote} successfully.");
         }
 
         protected override void Tick()
         {
             try
             {
+                // handle timeout
+                foreach (CSteamID id in _lastSeen.ToDictionary(e => e.Key, e => e.Value).Keys)
+                {
+                    if (_lastSeen[id] != 0 && _lastSeen[id] < Time.unscaledTime - ModConfig.ConnectionTimeout)
+                    {
+                        LogUtil.LogInfo($"Player {id} timed out.", true);
+
+                        SteamNetworking.CloseP2PSessionWithUser(id);
+                        _sync.RemovePlayer(id.ToString());
+                        _lastSeen.Remove(id);
+                    }
+                }
+
+                // handle loneliness
+                if (_lastSeen.Count == 0 && !_isHost)
+                {
+                    Connected = false;
+                    _isHost = true;
+
+                    SteamFriends.SetRichPresence("connect", GetId());
+                }
+
+                // read
                 while (SteamNetworking.IsP2PPacketAvailable(out uint msgSize))
                 {
                     byte[] bytes = new byte[msgSize];
 
                     if (SteamNetworking.ReadP2PPacket(bytes, msgSize, out _, out CSteamID sender))
                     {
+                        _lastSeen[sender] = Time.unscaledTime;
+
                         OnData(bytes);
 
-                        if (_role == ELobbyRole.SERVER)
+                        if (_isHost)
                         {
-                            foreach (CSteamID id in _connected)
+                            foreach (CSteamID id in _lastSeen.Keys)
                                 if (id != sender) SteamNetworking.SendP2PPacket(id, bytes, msgSize, EP2PSend.k_EP2PSendReliable);
                         }
                     }
@@ -221,8 +144,7 @@ namespace SilklessCoop
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error during tick: {e}");
-                Disable();
+                LogUtil.LogError(e.ToString());
             }
         }
 
@@ -230,8 +152,34 @@ namespace SilklessCoop
         {
             if (!Initialized || !Enabled) return;
 
-            foreach (CSteamID id in _connected)
+            foreach (CSteamID id in _lastSeen.Keys)
                 SteamNetworking.SendP2PPacket(id, data, (uint)data.Length, EP2PSend.k_EP2PSendReliable);
+        }
+
+        private void OnGameRichPresenceJoinRequested(GameRichPresenceJoinRequested_t request)
+        {
+            // called on client
+            LogUtil.LogInfo($"Connecting to {request.m_steamIDFriend}...");
+
+            Connected = true;
+            _isHost = false;
+            _lastSeen[request.m_steamIDFriend] = 0;
+            SteamFriends.SetRichPresence("connect", request.m_steamIDFriend.ToString());
+
+            LogUtil.LogInfo($"Successfully connected to {request.m_steamIDFriend}.", true);
+        }
+
+        private void OnP2PSessionRequest(P2PSessionRequest_t request)
+        {
+            // called on server
+            LogUtil.LogInfo($"Incoming connection from {request.m_steamIDRemote}...");
+
+            SteamNetworking.AcceptP2PSessionWithUser(request.m_steamIDRemote);
+
+            Connected = true;
+            _lastSeen[request.m_steamIDRemote] = 0;
+
+            LogUtil.LogInfo($"Successfully received connection from {request.m_steamIDRemote}.", true);
         }
     }
 }

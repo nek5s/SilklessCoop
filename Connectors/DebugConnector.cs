@@ -1,4 +1,6 @@
-﻿namespace SilklessCoop.Connectors
+﻿using SilklessCoop.Global;
+
+namespace SilklessCoop.Connectors
 {
     internal class DebugConnector : Connector
     {
@@ -8,28 +10,28 @@
 
         public override bool Init()
         {
-            Logger.LogInfo($"Initializing {GetConnectorName()}...");
+            LogUtil.LogInfo($"Initializing {GetConnectorName()}...");
             bool tmp = base.Init();
-            Logger.LogInfo($"{GetConnectorName()} has been initialized successfully.");
+            LogUtil.LogInfo($"{GetConnectorName()} has been initialized successfully.", true);
             return tmp;
         }
 
         public override void Enable()
         {
-            Logger.LogInfo($"Enabling {GetConnectorName()}...");
+            LogUtil.LogInfo($"Enabling {GetConnectorName()}...");
             Connected = true;
             base.Enable();
-            _interface.SendPacket(new PacketTypes.JoinPacket { id = GetId() });
-            Logger.LogInfo($"{GetConnectorName()} has been enabled successfully.");
+            LogUtil.LogInfo($"{GetConnectorName()} has been enabled successfully.", true);
         }
 
         public override void Disable()
         {
-            Logger.LogInfo($"Disabling {GetConnectorName()}...");
-            _interface.SendPacket(new PacketTypes.LeavePacket { id = GetId() });
+            LogUtil.LogInfo($"Disabling {GetConnectorName()}...");
             Connected = false;
             base.Disable();
-            Logger.LogInfo($"{GetConnectorName()} has been disabled successfully.");
+            LogUtil.LogInfo($"{GetConnectorName()} has been disabled successfully.", true);
+
+            _sync.Reset();
         }
 
         public override void SendData(byte[] data)
