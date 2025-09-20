@@ -247,7 +247,7 @@ namespace SilklessCoop.Components
                     playerObject.SetActive(packet.scene == SceneManager.GetActiveScene().name);
                     playerInterpolator.velocity = new Vector3(packet.vX, packet.vY, 0);
 
-                    LogUtil.LogDebug($"Updated position of player {packet.id} to ({packet.posX} {packet.posY})");
+                    LogUtil.LogDebug($"Updated position of player {packet.id} to {packet.scene}/({packet.posX} {packet.posY})");
                 }
             }
             catch (Exception e)

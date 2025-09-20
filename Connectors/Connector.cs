@@ -28,14 +28,6 @@ namespace SilklessCoop.Connectors
             _interface = gameObject.GetComponent<NetworkInterface>();
         }
 
-        protected virtual void Update()
-        {
-            if (_tickTimeout >= 0) _tickTimeout -= Time.unscaledDeltaTime;
-            else { Tick(); _tickTimeout = 1.0f / ModConfig.TickRate; }
-        }
-
-        protected virtual void Tick() { }
-
         public virtual bool Init()
         {
             Initialized = true;

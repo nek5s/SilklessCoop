@@ -83,24 +83,14 @@ namespace SilklessCoop.Connectors
             }
         }
 
-        protected override void Update()
+        private void Update()
         {
             try
             {
-                if (Initialized && Enabled) SteamAPI.RunCallbacks();
+                if (!Initialized || !Enabled) return;
+                
+                SteamAPI.RunCallbacks();
 
-                base.Update();
-            }
-            catch (Exception e)
-            {
-                LogUtil.LogError(e.ToString());
-            }
-        }
-
-        protected override void Tick()
-        {
-            try
-            {
                 // handle timeout
                 foreach (CSteamID id in _lastSeen.ToDictionary(e => e.Key, e => e.Value).Keys)
                 {

@@ -66,20 +66,13 @@ namespace SilklessCoop.Components
                     return;
                 }
 
-                using (MemoryStream ms = new MemoryStream())
-                using (BinaryWriter bw = new BinaryWriter(ms))
-                {
-                    byte[] content = Serialize(packet);
-                    if (content == null) return;
+                byte[] content = Serialize(packet);
+                byte[] bytes = new byte[1 + content.Length];
+                bytes[0] = key;
+                Array.Copy(content, 0, bytes, 1, content.Length);
 
-                    bw.Write((int) 5 + content.Length);
-                    bw.Write((byte) key);
-                    bw.Write(content);
-
-                    _connector.SendData(ms.ToArray());
-
-                    if (ModConfig.PrintDebugOutput) LogUtil.LogInfo($"Sent packet with key={key}.");
-                }
+                _connector.SendData(bytes);
+                LogUtil.LogDebug($"Sent packet with key={key}.");
             }
             catch (Exception e)
             {
@@ -94,14 +87,21 @@ namespace SilklessCoop.Components
                 using (MemoryStream ms = new MemoryStream(bytes))
                 using (BinaryReader br = new BinaryReader(ms))
                 {
-                    int size = br.ReadInt32();
                     byte key = br.ReadByte();
-                    byte[] content = br.ReadBytes(size - 5);
+                    byte[] content = br.ReadBytes(bytes.Length - 1);
 
-                    if (!_keyToType.TryGetValue(key, out Type type) || type == null) return;
-                    if (!_handlers.TryGetValue(type, out Action<IPacket> handler) || handler == null) return;
+                    if (!_keyToType.TryGetValue(key, out Type type) || type == null)
+                    {
+                        LogUtil.LogDebug($"Type not found for key={key}");
+                        return;
+                    }
+                    if (!_handlers.TryGetValue(type, out Action<IPacket> handler) || handler == null)
+                    {
+                        LogUtil.LogDebug($"Handler not found for type={type.Name}");
+                        return;
+                    }
 
-                    if (ModConfig.PrintDebugOutput) LogUtil.LogInfo($"Received packet with key={key}.");
+                    LogUtil.LogDebug($"Received packet with key={key}.");
 
                     MethodInfo genMethod = typeof(NetworkInterface).GetMethod("Deserialize").MakeGenericMethod(type);
 

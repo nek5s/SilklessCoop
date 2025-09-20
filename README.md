@@ -1,14 +1,6 @@
 # SilklessCoop
 
-V2.3 - Code cleanup, stability and efficiency
-
-V2.2 - Added Menu UI
-
-V2.1 - Added Compass sync
-
-V2.0 - Added Steam support
-
-V1.0 - Initial release
+V2.3.1 - More stability fixes (requires echoserver V2.2+)
 
 A simple coop mod allowing you to see your friends in each others game.
 

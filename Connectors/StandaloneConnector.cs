@@ -106,7 +106,7 @@ namespace SilklessCoop.Connectors
             }
         }
 
-        protected override void Tick()
+        private void Update()
         {
             try
             {
@@ -124,45 +124,22 @@ namespace SilklessCoop.Connectors
         {
             try
             {
-                byte[] buffer = new byte[1024];
-
                 while (_rxRunning)
                 {
-                    try
-                    {
-                        if (_stream == null) { LogUtil.LogError("Stream not found!"); break; }
-                        if (_socket == null) { LogUtil.LogError("Socket not found!"); break; }
-                        if (_socket.Client.Poll(0, SelectMode.SelectRead) && _socket.Available == 0) { LogUtil.LogError("Data not found!"); break; }
+                    // read size
+                    byte[] sizeBytes = ReadBytes(4);
+                    if (sizeBytes == null) break;
+                    int size = BitConverter.ToInt32(sizeBytes);
 
-                        if (!_stream.CanRead)
-                        {
-                            Thread.Sleep(100);
-                            continue;
-                        }
+                    LogUtil.LogDebug($"Read size={size}");
+                    if (size == 0) continue;
 
-                        int bytesRead = _stream.Read(buffer, 0, buffer.Length);
-                        if (bytesRead <= 0) continue;
+                    // read content
+                    byte[] contentBytes = ReadBytes(size - 4);
+                    if (contentBytes == null) break;
 
-                        int size = BitConverter.ToInt32(buffer, 0);
-
-                        byte[] bytes = new byte[size];
-                        Array.Copy(buffer, 4, bytes, 0, size);
-                        _rxQueue.Enqueue(bytes);
-                    }
-                    catch (IOException e)
-                    {
-                        if (e.InnerException is SocketException sockEx && sockEx.SocketErrorCode == SocketError.TimedOut)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            LogUtil.LogError(e.ToString());
-                            
-                            Disable();
-                            break;
-                        }
-                    }
+                    // success
+                    _rxQueue.Enqueue(contentBytes);
                 }
 
                 LogUtil.LogInfo("Receive thread ended.");
@@ -176,6 +153,44 @@ namespace SilklessCoop.Connectors
             }
         }
 
+        private byte[] ReadBytes(int length)
+        {
+            byte[] buffer = new byte[length];
+            int read = 0;
+
+            while (read < length)
+            {
+                if (!_rxRunning) return null;
+                if (_stream == null) { LogUtil.LogError("Stream not found!"); return null; }
+                if (_socket == null) { LogUtil.LogError("Socket not found!"); return null; }
+                if (_socket.Client.Poll(0, SelectMode.SelectRead) && _socket.Available == 0) { LogUtil.LogError("Data not found!"); return null; }
+
+                if (!_stream.DataAvailable)
+                {
+                    Thread.Sleep(100);
+                    continue;
+                }
+
+                try
+                {
+                    read += _stream.Read(buffer, read, length - read);
+                }
+                catch (IOException e)
+                {
+                    if (e.InnerException is SocketException sockEx && sockEx.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        LogUtil.LogError(e.ToString()); return null;
+                    }
+                }
+            }
+
+            return buffer;
+        }
+
         public override void SendData(byte[] data)
         {
             try
@@ -183,15 +198,14 @@ namespace SilklessCoop.Connectors
                 if (!Initialized || !Enabled) { LogUtil.LogError($"Cannot send while disabled!");  return; }
                 if (_socket == null || _stream == null) { LogUtil.LogError($"Cannot send with missing socket!");  return; }
 
-                int size = 4 + data.Length;
-                byte[] bytes = new byte[size];
-                bytes[0] = (byte)((size      ) & 0xff);
-                bytes[1] = (byte)((size >>  8) & 0xff);
-                bytes[2] = (byte)((size >> 16) & 0xff);
-                bytes[3] = (byte)((size >> 24) & 0xff);
-                Array.Copy(data, 0, bytes, 4, data.Length);
+                using (MemoryStream ms = new MemoryStream())
+                using (BinaryWriter bw = new BinaryWriter(ms))
+                {
+                    bw.Write(4 + data.Length);
+                    bw.Write(data);
 
-                _stream.Write(bytes, 0, bytes.Length);
+                    _stream.Write(ms.ToArray());
+                }
             }
             catch (Exception e)
             {
