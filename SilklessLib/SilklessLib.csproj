@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<AssemblyName>SilklessLib</AssemblyName>
+		<Product>SilklessLib</Product>
+		<Version>1.0.0</Version>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<LangVersion>latest</LangVersion>
+		<RestoreAdditionalProjectSources>
+			https://api.nuget.org/v3/index.json;
+			https://nuget.bepinex.dev/v3/index.json;
+			https://nuget.samboy.dev/v3/index.json
+		</RestoreAdditionalProjectSources>
+		<RootNamespace>SilklessLib</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+		<PackageReference Include="BepInEx.Core" Version="5.*" />
+		<PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+		<PackageReference Include="UnityEngine.Modules" Version="6000.0.50" IncludeAssets="compile" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="TeamCherry.TK2D">
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/TeamCherry.TK2D.dll</HintPath>
+		</Reference>
+
+		<Reference Include="TeamCherry.Localization">
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/TeamCherry.Localization.dll</HintPath>
+		</Reference>
+
+		<Reference Include="Assembly-CSharp">
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/Assembly-CSharp.dll</HintPath>
+		</Reference>
+
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+
+		<Reference Include="UnityEngine.UI">
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/UnityEngine.UI.dll</HintPath>
+		</Reference>
+
+		<Reference Include="com.rlabrecque.steamworks.net">
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/com.rlabrecque.steamworks.net.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+  
+	<ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+	</ItemGroup>
+</Project>

@@ -2,9 +2,9 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <AssemblyName>SilklessCoop</AssemblyName>
-        <Product>SilklessCoop</Product>
-        <Version>2.3.1</Version>
+        <AssemblyName>SimpleSync</AssemblyName>
+        <Product>SimpleSync</Product>
+        <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RestoreAdditionalProjectSources>
@@ -12,7 +12,7 @@
             https://nuget.bepinex.dev/v3/index.json;
             https://nuget.samboy.dev/v3/index.json
         </RestoreAdditionalProjectSources>
-        <RootNamespace>SilklessCoop</RootNamespace>
+        <RootNamespace>SimpleSync</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,30 +24,32 @@
 
 	<ItemGroup>
 		<Reference Include="TeamCherry.TK2D">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/TeamCherry.TK2D.dll</HintPath>
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/TeamCherry.TK2D.dll</HintPath>
 		</Reference>
 
 		<Reference Include="TeamCherry.Localization">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/TeamCherry.Localization.dll</HintPath>
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/TeamCherry.Localization.dll</HintPath>
 		</Reference>
 
 		<Reference Include="Assembly-CSharp">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/Assembly-CSharp.dll</HintPath>
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/Assembly-CSharp.dll</HintPath>
 		</Reference>
-		
+
 		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
 		</Reference>
 
 		<Reference Include="UnityEngine.UI">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/UnityEngine.UI.dll</HintPath>
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/UnityEngine.UI.dll</HintPath>
 		</Reference>
 
 		<Reference Include="com.rlabrecque.steamworks.net">
-			<HintPath>../../../Hollow Knight Silksong_Data/Managed/com.rlabrecque.steamworks.net.dll</HintPath>
+			<HintPath>../../../../Hollow Knight Silksong_Data/Managed/com.rlabrecque.steamworks.net.dll</HintPath>
 		</Reference>
+
+		<ProjectReference Include="../SilklessLib/SilklessLib.csproj" />
 	</ItemGroup>
-  
+	
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
         <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
     </ItemGroup>

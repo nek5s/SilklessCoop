@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11012.119 d18.0
+VisualStudioVersion = 18.0.11012.119
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SilklessCoop", "SilklessCoop.csproj", "{0AB9F345-A163-4332-9A69-F34D019E964D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SilklessLib", "SilklessLib\SilklessLib.csproj", "{9BA6FEB7-1C48-C5CA-EA2F-F976AFC406CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleSync", "SimpleSync\SimpleSync.csproj", "{00308C7F-ADF7-2604-286A-3BFF8DCB39CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +13,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0AB9F345-A163-4332-9A69-F34D019E964D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0AB9F345-A163-4332-9A69-F34D019E964D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0AB9F345-A163-4332-9A69-F34D019E964D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0AB9F345-A163-4332-9A69-F34D019E964D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75BF2A6C-D0C8-4DCB-B69F-CED869412E3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75BF2A6C-D0C8-4DCB-B69F-CED869412E3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75BF2A6C-D0C8-4DCB-B69F-CED869412E3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75BF2A6C-D0C8-4DCB-B69F-CED869412E3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BA6FEB7-1C48-C5CA-EA2F-F976AFC406CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BA6FEB7-1C48-C5CA-EA2F-F976AFC406CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BA6FEB7-1C48-C5CA-EA2F-F976AFC406CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BA6FEB7-1C48-C5CA-EA2F-F976AFC406CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00308C7F-ADF7-2604-286A-3BFF8DCB39CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00308C7F-ADF7-2604-286A-3BFF8DCB39CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00308C7F-ADF7-2604-286A-3BFF8DCB39CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00308C7F-ADF7-2604-286A-3BFF8DCB39CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {2AD4F0D1-8514-4776-9B35-9771278319A7}
+		SolutionGuid = {175C4681-6970-400D-A6DD-1F398C521D4F}
 	EndGlobalSection
 EndGlobal

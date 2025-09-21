@@ -1,6 +1,6 @@
 # SilklessCoop
 
-V2.3.1 - More stability fixes (requires echoserver V2.2+)
+V2.4.0 - Code restructuring and actually good animations
 
 A simple coop mod allowing you to see your friends in each others game.
 
