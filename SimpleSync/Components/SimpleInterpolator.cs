@@ -25,6 +25,6 @@ internal class SimpleInterpolator : MonoBehaviour
     public void SetVelocity(Vector3 v)
     {
         _velocity = v;
-        _opacity = 1.0f;
+        _opacity = ModConfig.PlayerOpacity;
     }
 }

@@ -1,6 +1,6 @@
 # SilklessCoop
 
-V2.4.0 - Code restructuring and actually good animations
+V2.4.1 - Fixed bug with hunter animations and player opacity not applying
 
 A simple coop mod allowing you to see your friends in each others game.
 

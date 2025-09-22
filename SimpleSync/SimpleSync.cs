@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using SilklessLib;
@@ -241,10 +242,15 @@ internal class SimpleSync : MonoBehaviour
         _lastSeen[packet.ID] = Time.unscaledTime;
 
         if (!_hornetObject) return;
-        if (!_playerAnimators.TryGetValue(packet.ID, out tk2dSpriteAnimator playerAnimator)) return;
-
-        tk2dSpriteAnimationClip clip = ToolItemManager.GetCrestByName(packet.CrestName).HeroConfig.GetAnimationClip(packet.ClipName);
+        if (!_playerAnimators.TryGetValue(packet.ID, out tk2dSpriteAnimator playerAnimator) || !playerAnimator) return;
+        
+        tk2dSpriteAnimationClip clip = ToolItemManager.GetCrestByName(packet.CrestName)?.HeroConfig?.GetAnimationClip(packet.ClipName);
         if (clip == null) clip = playerAnimator.Library.GetClipByName(packet.ClipName);
+        if (clip == null)
+        {
+            LogUtil.LogError($"Could not find animation clip {packet.CrestName}/{packet.ClipName}");
+            return;
+        }
 
         playerAnimator.Play(clip);
         LogUtil.LogDebug($"Started animation {clip.name} for player {packet.ID}");
@@ -293,19 +299,28 @@ internal class HornetAnimationPatch
     // ReSharper disable once InconsistentNaming
     public static void Prefix(tk2dSpriteAnimationClip clip, float clipStartTime, float overrideFps, tk2dSpriteAnimator __instance)
     {
-        string name = __instance?.gameObject.name ?? "unknown";
-        if (name != "Hero_Hornet" && name != "Hero_Hornet(Clone)") return;
-
-        string crestName = PlayerData.instance.CurrentCrestID;
-        string clipName = clip.name;
-
-        if (SilklessAPI.Ready)
+        try
         {
-            SilklessAPI.SendPacket(new HornetAnimationPacket
+            string name = __instance?.gameObject.name ?? "unknown";
+            if (name != "Hero_Hornet" && name != "Hero_Hornet(Clone)") return;
+
+            string crestName = PlayerData.instance?.CurrentCrestID;
+            string clipName = clip?.name;
+            
+            if (crestName == null || clipName == null) return;
+
+            if (SilklessAPI.Ready)
             {
-                CrestName = crestName,
-                ClipName = clipName,
-            });
+                SilklessAPI.SendPacket(new HornetAnimationPacket
+                {
+                    CrestName = crestName,
+                    ClipName = clipName,
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            LogUtil.LogError(e.ToString());
         }
     }
 }
