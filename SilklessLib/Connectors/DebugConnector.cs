@@ -8,7 +8,7 @@ namespace SilklessLib.Connectors
         {
             try
             {
-                LogUtil.LogInfo($"Enabling {GetConnectorName()}...", true);
+                LogUtil.LogDebug($"Enabling {GetConnectorName()}...", true);
             
                 Connected = true;
                 Active = true;

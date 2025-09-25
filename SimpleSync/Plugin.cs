@@ -1,6 +1,8 @@
 ﻿using BepInEx;
+using HarmonyLib;
 using SilklessLib;
 using SimpleSync.Components;
+using SimpleSync.Syncs;
 using UnityEngine;
 
 namespace SimpleSync;
@@ -34,6 +36,9 @@ public class Plugin : BaseUnityPlugin
             LogUtil.LogError("SilklessAPI failed to initialize!");
             return;
         }
+
+        // patch
+        new Harmony("com.silklesscoop.simplesync").PatchAll();  
         
         // set up menu button and popups
         gameObject.AddComponent<UIAdder>();
@@ -46,8 +51,17 @@ public class Plugin : BaseUnityPlugin
         LogUtil.OnPopupInfo += s => pm.SpawnPopup(s);
         LogUtil.OnPopupError += _ => pm.SpawnPopup("Encountered error, check logs for details.", Color.red);
 
-        // enable simple sync script
-        gameObject.AddComponent<SimpleSync>();
+        // add syncs
+        gameObject.AddComponent<HornetVisualSync>();
+        gameObject.AddComponent<CompassSync>();
+        gameObject.AddComponent<PlayerCountSync>();
+    }
+
+    private void OnDestroy()
+    {
+        foreach (Sync s in gameObject.GetComponents<Sync>()) Destroy(s);
+        
+        new Harmony("com.silklesscoop.simplesync").UnpatchSelf();
     }
 
     private void Update()
@@ -56,8 +70,7 @@ public class Plugin : BaseUnityPlugin
 
         if (Input.GetKeyDown(ModConfig.MultiplayerToggleKey))
         {
-            if (SilklessAPI.Ready) SilklessAPI.Disable();
-            else SilklessAPI.Enable();
+            SilklessAPI.Toggle();
         }
     }
 }

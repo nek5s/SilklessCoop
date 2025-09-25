@@ -21,8 +21,13 @@ namespace SilklessLib
         public static bool Connected => _connector?.Connected ?? false;
         public static bool Ready => Initialized && Connected;
 
-        private static Connector _connector;
+        public static HashSet<string> PlayerIDs => _lastSeen.Keys.ToHashSet();
 
+        private static Connector _connector;
+        
+        private static float _time;
+        // ReSharper disable once InconsistentNaming
+        private static readonly Dictionary<string, float> _lastSeen = new();
         // ReSharper disable once InconsistentNaming
         private static readonly Dictionary<string, Type> _keyToType = new();
         // ReSharper disable once InconsistentNaming
@@ -30,61 +35,111 @@ namespace SilklessLib
 
         public static bool Init(ManualLogSource logger = null)
         {
-            if (logger != null) LogUtil.ConsoleLogger = logger;
-
-            if (Initialized) return true;
-
-            LogUtil.LogInfo("Initializing...", true);
-
-            if (SilklessConfig.ConnectionType == SilklessConfig.EConnectionType.Debug) _connector = new DebugConnector();
-            if (SilklessConfig.ConnectionType == SilklessConfig.EConnectionType.Standalone) _connector = new StandaloneConnector();
-            if (SilklessConfig.ConnectionType == SilklessConfig.EConnectionType.SteamP2P) _connector = new SteamConnector();
-
-            if (_connector == null)
+            try
             {
-                LogUtil.LogError("Connector type not found!");
+                if (logger != null) LogUtil.ConsoleLogger = logger;
+
+                if (Initialized) return true;
+
+                LogUtil.LogInfo("Initializing...", true);
+
+                if (SilklessConfig.ConnectionType == SilklessConfig.EConnectionType.Debug) _connector = new DebugConnector();
+                if (SilklessConfig.ConnectionType == SilklessConfig.EConnectionType.Standalone) _connector = new StandaloneConnector();
+                if (SilklessConfig.ConnectionType == SilklessConfig.EConnectionType.SteamP2P) _connector = new SteamConnector();
+
+                if (_connector == null)
+                {
+                    LogUtil.LogError("Connector type not found!");
+                    return false;
+                }
+
+                if (!_connector.Init())
+                {
+                    LogUtil.LogError($"Failed to initialize {_connector.GetConnectorName()}!");
+                    return false;
+                }
+
+                _connector.OnData += OnData;
+
+                Initialized = true;
+
+                LogUtil.LogInfo("Initialized successfully.", true);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
                 return false;
             }
-
-            if (!_connector.Init())
-            {
-                LogUtil.LogError($"Failed to initialize {_connector.GetConnectorName()}!");
-                return false;
-            }
-
-            _connector.OnData += OnData;
-
-            Initialized = true;
-
-            LogUtil.LogInfo("Initialized successfully.", true);
-
-            return true;
         }
 
         public static bool Enable()
         {
-            LogUtil.LogInfo($"Enabling {_connector.GetConnectorName()}...", true);
+            try
+            {
+                LogUtil.LogInfo($"Enabling {_connector.GetConnectorName()}...", true);
 
-            if (!_connector.Connect()) return false;
+                if (!_connector.Connect()) return false;
+            
+                PlayerIDs.Clear();
 
-            LogUtil.LogInfo($"Enabled {_connector.GetConnectorName()} successfully.", true);
+                LogUtil.LogInfo($"Enabled {_connector.GetConnectorName()} successfully.", true);
 
-            OnConnect?.Invoke();
+                try
+                {
+                    OnConnect?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    LogUtil.LogError($"Error during OnConnect: {e}");
+                    return false;
+                }
+                
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return false;
+            }
         }
 
         public static bool Disable()
         {
-            LogUtil.LogInfo($"Disabling {_connector.GetConnectorName()}...", true);
+            try
+            {
+                LogUtil.LogInfo($"Disabling {_connector.GetConnectorName()}...", true);
 
-            if (!_connector.Disconnect()) return false;
+                if (!_connector.Disconnect()) return false;
 
-            LogUtil.LogInfo($"Disabled {_connector.GetConnectorName()} successfully.", true);
+                foreach (string id in PlayerIDs)
+                {
+                    OnPlayerLeave?.Invoke(id);
+                    LogUtil.LogInfo($"Player {id} left.", true);
+                }
+                PlayerIDs.Clear();
+            
+                LogUtil.LogInfo($"Disabled {_connector.GetConnectorName()} successfully.", true);
 
-            OnDisconnect?.Invoke();
+                try
+                {
+                    OnDisconnect?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    LogUtil.LogError($"Error during OnDisconnect: {e}");
+                    return false;
+                }
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return false;
+            }
         }
 
         public static bool Toggle()
@@ -95,94 +150,167 @@ namespace SilklessLib
         
         public static void Update(float dt)
         {
-            if (!Ready) return;
+            try
+            {
+                _time += dt;
 
-            _connector.Update(dt);
+                _lastSeen["self"] = _time;
+                foreach (string id in _lastSeen.ToDictionary(e => e.Key, e => e.Value).Keys)
+                    if (_lastSeen[id] < _time - SilklessConfig.ConnectionTimeout)
+                    {
+                        OnPlayerLeave?.Invoke(id);
+                        LogUtil.LogInfo($"Player {id} left.", true);
+                        _lastSeen.Remove(id);
+                    }
+            
+                if (!Ready) return;
+
+                try
+                {
+                    _connector.Update(dt);
+                }
+                catch (Exception e)
+                {
+                    LogUtil.LogError($"Error during connector update: {e}");
+                }
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+            }
         }
 
         public static bool SendPacket<T>(T packet) where T : SilklessPacket
         {
-            if (!Ready) return false;
+            try
+            {
+                if (!Ready) return false;
 
-            LogUtil.LogDebug($"Sending packet with key={packet.GetType().Name} and id={_connector.GetId()}...");
+                LogUtil.LogDebug($"Sending packet with key={packet.GetType().Name} and id={_connector.GetId()}...");
 
-            packet.ID = _connector.GetId();
+                packet.ID = _connector.GetId();
 
-            byte[] bytes = Serialize(packet);
+                byte[] bytes = Serialize(packet);
 
-            if (!_connector.SendBytes(bytes)) return false;
+                if (!_connector.SendBytes(bytes)) return false;
 
-            LogUtil.LogDebug($"Sent packet with key={packet.GetType().Name} successfully.");
+                LogUtil.LogDebug($"Sent packet with key={packet.GetType().Name} successfully.");
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return false;
+            }
         }
 
         public static bool AddHandler<T>(Action<T> a) where T : SilklessPacket
         {
-            LogUtil.LogDebug($"Adding handler with key={typeof(T).Name}...");
+            try
+            {
+                LogUtil.LogDebug($"Adding handler with key={typeof(T).Name}...");
 
-            string key = typeof(T).Name;
+                string key = typeof(T).Name;
             
-            _keyToType.Add(key, typeof(T));
+                if (!_keyToType.ContainsKey(key)) _keyToType.Add(key, typeof(T));
 
-            // ReSharper disable once NotAccessedVariable
-            // ReSharper disable once RedundantAssignment
-            if (_handlers.TryGetValue(key, out Action<SilklessPacket> handler)) handler += packet => a((T)packet);
-            else _handlers.Add(key, packet => a((T)packet));
+                // ReSharper disable once NotAccessedVariable
+                // ReSharper disable once RedundantAssignment
+                if (_handlers.TryGetValue(key, out Action<SilklessPacket> handler)) handler += packet => a((T)packet);
+                else _handlers.Add(key, packet => a((T)packet));
 
-            LogUtil.LogDebug($"Added handler with key={typeof(T).Name} successfully.");
+                LogUtil.LogInfo($"Added handler with key={typeof(T).Name} successfully.");
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return false;
+            }
         }
 
         public static bool RemoveHandler<T>(Action<T> a) where T : SilklessPacket
         {
-            LogUtil.LogDebug($"Removing handler with key={typeof(T).Name}...");
+            try
+            {
+                LogUtil.LogDebug($"Removing handler with key={typeof(T).Name}...");
 
-            string key = typeof(T).Name;
+                string key = typeof(T).Name;
 
-            _keyToType.Remove(key);
+                _keyToType.Remove(key);
 
-            // ReSharper disable once NotAccessedVariable
-            // ReSharper disable once RedundantAssignment
-            if (_handlers.TryGetValue(key, out Action<SilklessPacket> handler)) handler -= packet => a((T)packet);
+                // ReSharper disable once NotAccessedVariable
+                // ReSharper disable once RedundantAssignment
+                if (_handlers.TryGetValue(key, out Action<SilklessPacket> handler)) handler -= packet => a((T)packet);
 
-            LogUtil.LogDebug($"Removed handler with key={typeof(T).Name} successfully.");
+                LogUtil.LogDebug($"Removed handler with key={typeof(T).Name} successfully.");
 
-            return true;
+                return true;
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return false;
+            }
         }
 
         private static void OnData(byte[] bytes)
         {
-            SilklessPacket packet = Deserialize(bytes);
-            if (packet == null)
+            try
             {
-                LogUtil.LogError("Could not deserialize packet!");
-                return;
+                SilklessPacket packet = Deserialize(bytes);
+                if (packet == null)
+                {
+                    LogUtil.LogError("Could not deserialize packet!");
+                    return;
+                }
+
+                string key = packet.GetType().Name;
+
+                if (!_handlers.TryGetValue(key, out Action<SilklessPacket> handler) || handler == null)
+                {
+                    LogUtil.LogDebug($"Could not find handler for packet key={key}");
+                    return;
+                }
+            
+                LogUtil.LogDebug($"Received packet with key={key}.");
+
+                try
+                {
+                    handler.Invoke(packet);
+                }
+                catch (Exception e)
+                {
+                    LogUtil.LogError($"Error in handler: {e}");
+                }
+            
+
+                if (_lastSeen.TryAdd(packet.ID, _time))
+                {
+                    OnPlayerJoin?.Invoke(packet.ID);
+                    LogUtil.LogInfo($"Player {packet.ID} joined.", true);
+                }
+                else _lastSeen[packet.ID] = _time;
             }
-
-            string key = packet.GetType().Name;
-
-            if (!_handlers.TryGetValue(key, out Action<SilklessPacket> handler))
+            catch (Exception e)
             {
-                LogUtil.LogError($"Could not find handler for packet key={key}");
-                return;
+                LogUtil.LogError(e.ToString());
             }
-
-            LogUtil.LogDebug($"Received packet with key={key}.");
-
-            handler(packet);
         }
 
         private static byte[] Serialize<T>(T packet) where T : SilklessPacket
         {
-            string key = typeof(T).Name;
-
-            LogUtil.LogInfo($"Serializing packet with key={key}");
-
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8))
+            try
             {
+                string key = typeof(T).Name;
+
+                LogUtil.LogDebug($"Serializing packet with key={key}");
+
+                using MemoryStream ms = new MemoryStream();
+                using BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8);
+            
                 bw.Write(key.Length);
                 bw.Write(Encoding.UTF8.GetBytes(key));
 
@@ -207,17 +335,24 @@ namespace SilklessLib
 
                 return ms.ToArray();
             }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return null;
+            }
         }
 
         private static SilklessPacket Deserialize(byte[] bytes)
         {
-            using (MemoryStream ms = new MemoryStream(bytes))
-            using (BinaryReader br = new BinaryReader(ms))
+            try
             {
+                using MemoryStream ms = new MemoryStream(bytes);
+                using BinaryReader br = new BinaryReader(ms);
+            
                 int keyLen = br.ReadInt32();
                 string key = Encoding.UTF8.GetString(br.ReadBytes(keyLen));
 
-                if (!_keyToType.TryGetValue(key, out Type type))
+                if (!_keyToType.TryGetValue(key, out Type type) || type == null)
                 {
                     LogUtil.LogDebug($"Unrecognized packet key={key}.");
                     return null;
@@ -245,9 +380,16 @@ namespace SilklessLib
 
                 return packet;
             }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e.ToString());
+                return null;
+            }
         }
 
         public static Action OnConnect;
+        public static Action<string> OnPlayerJoin;
+        public static Action<string> OnPlayerLeave;
         public static Action OnDisconnect;
     }
 }

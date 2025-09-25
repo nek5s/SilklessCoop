@@ -129,16 +129,15 @@ namespace SilklessLib.Connectors
                 if (!Connected) { LogUtil.LogError("Cannot send while disabled!"); return false; }
                 if (_socket == null || _stream == null) { LogUtil.LogError("Cannot send with missing socket!"); return false; }
 
-                using (MemoryStream ms = new MemoryStream())
-                using (BinaryWriter bw = new BinaryWriter(ms))
-                {
-                    bw.Write(4 + data.Length);
-                    bw.Write(data);
+                using MemoryStream ms = new MemoryStream();
+                using BinaryWriter bw = new BinaryWriter(ms);
+                
+                bw.Write(4 + data.Length);
+                bw.Write(data);
 
-                    _stream.Write(ms.ToArray());
+                _stream.Write(ms.ToArray());
 
-                    return true;
-                }
+                return true;
             }
             catch (Exception e)
             {
