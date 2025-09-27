@@ -58,24 +58,31 @@ public class PlayerCountSync : Sync
         {
             if (!_compass || !_map || !_mainQuests) return;
 
-            if (_playerCountPins.Count < SilklessAPI.PlayerIDs.Count)
+            while (_playerCountPins.Count < SilklessAPI.PlayerIDs.Count)
             {
                 GameObject pin = Instantiate(_compass, _map.transform);
                 pin.SetActive(_mainQuests.activeSelf);
-                pin.SetName("SilklessPlayerCount");
+                pin.name = "SilklessPlayerCount";
                 pin.transform.position = new Vector3(-14.8f + 0.6f * SilklessAPI.PlayerIDs.Count, -8.2f, 0);
                 pin.transform.localScale = new Vector3(0.6f, 0.6f, 1);
+                
+                LogUtil.LogDebug($"Created player count pin {_playerCountPins.Count}");
+                
                 _playerCountPins.Push(pin);
             }
 
-            if (_playerCountPins.Count > SilklessAPI.PlayerIDs.Count && _playerCountPins.Count > 0)
+            while (_playerCountPins.Count > SilklessAPI.PlayerIDs.Count && _playerCountPins.Count > 0)
             {
                 Destroy(_playerCountPins.Pop());
+                
+                LogUtil.LogDebug($"Deleted player count pin {_playerCountPins.Count + 1}");
             }
 
             int i = 0;
             foreach (GameObject pin in _playerCountPins)
             {
+                if (!pin) continue;
+                
                 pin.transform.position = new Vector3(-14.8f + 0.6f * (i++), -8.2f, 0);
                 pin.SetActive(_mainQuests.activeSelf);
             }
@@ -88,6 +95,13 @@ public class PlayerCountSync : Sync
 
     protected override void Reset()
     {
-        
+        try
+        {
+            _playerCountPins.Clear();
+        }
+        catch (Exception e)
+        {
+            LogUtil.LogError(e.ToString());
+        }
     }
 }

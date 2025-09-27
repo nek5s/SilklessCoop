@@ -31,7 +31,7 @@ internal class UIAdder : MonoBehaviour
             {
                 _mainMenuButton = Instantiate(_oldButton, _mainMenuContainer.transform, true);
                 _mainMenuButton.transform.localScale = Vector3.one;
-                _mainMenuButton.SetName("MultiplayerButton");
+                _mainMenuButton.name = "MultiplayerButton";
                 _mainMenuText = _mainMenuButton.transform.GetChild(0).gameObject.GetComponent<UnityEngine.UI.Text>();
 
                 EventTrigger et = _mainMenuButton.GetComponent<EventTrigger>();

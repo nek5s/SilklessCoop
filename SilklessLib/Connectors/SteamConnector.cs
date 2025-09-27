@@ -19,6 +19,8 @@ namespace SilklessLib.Connectors
 
         public override string GetId() => SteamUser.GetSteamID().ToString();
 
+        public override string GetUsername() => SteamFriends.GetPersonaName();
+
         public override bool Init()
         {
             LogUtil.LogInfo($"Initializing {GetConnectorName()} ...");

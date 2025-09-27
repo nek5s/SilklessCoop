@@ -40,7 +40,9 @@ namespace SilklessLib.Connectors
 
         public override string GetConnectorName() { return "Debug Connector"; }
 
-        public override string GetId() { return "xxxx-xxxx"; }
+        public override string GetId() => "xxxx-xxxx";
+
+        public override string GetUsername() => "debug-user";
 
         public override bool Init() { return true; }
 

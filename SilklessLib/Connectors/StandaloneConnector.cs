@@ -33,6 +33,8 @@ namespace SilklessLib.Connectors
             return _id = new string(chars);
         }
 
+        public override string GetUsername() { return SilklessConfig.StandaloneUsername; }
+
         public override bool Init()
         {
             try

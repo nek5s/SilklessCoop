@@ -145,7 +145,7 @@ public class HornetVisualSync : Sync
                 LogUtil.LogDebug($"Creating new player object for player {packet.ID}");
                 
                 playerObject = new GameObject();
-                playerObject.SetName($"SilklessCooperator - {packet.ID}");
+                playerObject.name = $"SilklessCooperator - {packet.ID}";
                 playerObject.transform.SetParent(transform);
                 playerObject.transform.position = new Vector3(packet.PositionX, packet.PositionY, _hornetObject.transform.position.z + 0.001f);
                 playerObject.transform.localScale = new Vector3(packet.ScaleX, 1, 1);
