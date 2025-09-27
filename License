@@ -1,23 +1,33 @@
 # License
 
-All rights reserved.
+CC BY-NC-SA.
 
 ## Terms of Use
 
-This repository and all its contents are protected by copyright law. The code, documentation, and any other materials within this repository are the sole property of the project owner. 
+This repository and all its contents are protected by copyright law. The code, documentation, and any other materials within this repository are the sole property of the project owner and are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike (CC BY-NC-SA) license, with the following additional terms:
 
-### Restrictions
+## Restrictions
 
-- You MAY NOT modify, distribute, republish, or repost any part of this repository, including the code, documentation, or any other materials, without explicit permission from the project owner.
-- You MAY NOT use the code in any commercial products or services without prior approval.
-- Any unauthorized use, modification, or distribution of the code may result in legal action.
+- You MAY NOT use the code for commercial purposes without prior written approval from the project owner.
+- You MAY NOT modify, distribute, or repost any part of this repository, including the code, documentation, or any other materials, without explicit permission from the project owner.
+- You MAY NOT use any derivative works of the code in commercial products or services.
 
-### Grant of Rights
+- If you make any modifications to the repository or any derivative works, you must share those modifications under the same license, and you must get permission from the project owner before redistributing any modified versions.
+
+## Grant of Rights
 
 The project owner may, at their sole discretion, provide permission to use, modify, or redistribute the code under specific conditions. Such permission must be granted in writing (e.g., via email or another formal means) and will not be considered granted unless explicitly stated.
 
-### Disclaimer
+## Disclaimer
 
-This code is provided "as-is," without any warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, or non-infringement.
+This code is provided "as-is," without any warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, or non-infringement. The project owner does not guarantee the accuracy, completeness, or usefulness of the code, and the user assumes all risk when using it.
 
 By accessing or using this repository, you agree to abide by the terms outlined above.
+
+## TL;DR
+
+- You may create mods based on the SilklessAPI if you follow the terms and conditions.
+- You may include the built release files in your mod as long as you open-source it and credit my mod/repo.
+- You may NOT publish my source code (keep my code out of your repo, just include the dll).
+- You may NOT make changes to my code and publish it without my explicit permission.
+- You may NOT use my library commercially without my explicit permission.

@@ -44,6 +44,12 @@ Note: player counter in the bottom left corner when viewing the quick map (holdi
 
 - Download SilklessCoop.zip and extract it into your root game folder
 
+## License
+
+This repository is licensed under CC BY-NC-SA.
+
+View the exact license details [here](./License).
+
 ## What's Next
 
 - More bugfixes
