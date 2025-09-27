@@ -23,6 +23,7 @@ internal static class ModConfig
     // standalone
     public static string EchoServerIP;
     public static int EchoServerPort;
+    public static string EchoServerUsername;
 
     public static string Version;
 
@@ -41,7 +42,8 @@ internal static class ModConfig
 
         EchoServerIP = config.Bind("Standalone", "Server IP Address", "127.0.0.1", "IP Address of the standalone server.").Value;
         EchoServerPort = config.Bind("Standalone", "Server Port", 45565, "Port of the standalone server.").Value;
-
+        EchoServerUsername = config.Bind("Standalone", "Username", "unknown", "Username shown above your head when connecting through echoserver.").Value;
+        
         Version = MyPluginInfo.PLUGIN_VERSION;
     }
 }

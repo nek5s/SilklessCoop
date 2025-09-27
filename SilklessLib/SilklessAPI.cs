@@ -33,6 +33,10 @@ public static class SilklessAPI
     // ReSharper disable once InconsistentNaming
     private static readonly Dictionary<string, Action<SilklessPacket>> _handlers = new();
 
+    public static string GetId() => _connector?.GetId();
+
+    public static string GetUsername() => _connector?.GetUsername();
+
     public static bool Init(ManualLogSource logger = null)
     {
         try

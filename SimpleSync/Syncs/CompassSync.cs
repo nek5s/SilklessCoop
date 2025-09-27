@@ -109,7 +109,7 @@ public class CompassSync : Sync
             if (!_playerCompasses.TryGetValue(packet.ID, out GameObject playerCompass) || !playerCompass)
             {
                 playerCompass = Instantiate(_compass, _map.transform);
-                playerCompass.SetName($"SilklessCompass - {packet.ID}");
+                playerCompass.name = $"SilklessCompass - {packet.ID}";
                 playerCompass.SetActive(packet.Active);
                 playerCompass.transform.localPosition = new Vector2(packet.PosX, packet.PosY);
 

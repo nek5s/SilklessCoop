@@ -62,7 +62,7 @@ public class PlayerCountSync : Sync
             {
                 GameObject pin = Instantiate(_compass, _map.transform);
                 pin.SetActive(_mainQuests.activeSelf);
-                pin.SetName("SilklessPlayerCount");
+                pin.name = "SilklessPlayerCount";
                 pin.transform.position = new Vector3(-14.8f + 0.6f * SilklessAPI.PlayerIDs.Count, -8.2f, 0);
                 pin.transform.localScale = new Vector3(0.6f, 0.6f, 1);
                 _playerCountPins.Push(pin);

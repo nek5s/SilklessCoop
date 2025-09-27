@@ -1,20 +1,20 @@
-﻿namespace SilklessLib
+﻿namespace SilklessLib;
+
+public static class SilklessConfig
 {
-    public static class SilklessConfig
-    {
-        public enum EConnectionType { SteamP2P, Standalone, Debug }
+    public enum EConnectionType { SteamP2P, Standalone, Debug }
 
-        // misc
-        public static bool PrintDebugOutput;
+    // misc
+    public static bool PrintDebugOutput;
 
-        // connection
-        public static EConnectionType ConnectionType;
-        public static float ConnectionTimeout;
+    // connection
+    public static EConnectionType ConnectionType;
+    public static float ConnectionTimeout;
 
-        // standalone
-        public static string StandaloneIP;
-        public static int StandalonePort;
+    // standalone
+    public static string StandaloneIP;
+    public static int StandalonePort;
+    public static string StandaloneUsername;
 
-        public static string Version;
-    }
+    public static string Version;
 }

@@ -9,6 +9,7 @@ namespace SilklessLib
 
         public abstract string GetConnectorName();
         public abstract string GetId();
+        public abstract string GetUsername();
 
         public abstract bool Init();
         public abstract bool Connect();
