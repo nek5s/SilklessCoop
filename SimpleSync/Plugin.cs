@@ -7,6 +7,11 @@ using UnityEngine;
 
 namespace SimpleSync;
 
+public class ModVersionPacket : SilklessPacket
+{
+    public string Version;
+}
+
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency("SilklessLib")]
 public class Plugin : BaseUnityPlugin
@@ -36,9 +41,23 @@ public class Plugin : BaseUnityPlugin
             LogUtil.LogError("SilklessAPI failed to initialize!");
             return;
         }
+        
+        // check versions
+        SilklessAPI.OnPlayerJoin += _ => SilklessAPI.SendPacket(new ModVersionPacket {Version = MyPluginInfo.PLUGIN_VERSION});
+        SilklessAPI.AddHandler<ModVersionPacket>(packet =>
+        {
+            if (packet.Version == MyPluginInfo.PLUGIN_VERSION)
+            {
+                LogUtil.LogInfo($"Version {MyPluginInfo.PLUGIN_VERSION} matched.", true);
+                return;
+            }
+            
+            LogUtil.LogInfo($"Version mismatch! You: {MyPluginInfo.PLUGIN_VERSION}, {packet.ID}: {packet.Version}", true);
+            SilklessAPI.Disable();
+        });
 
         // patch
-        new Harmony("com.silklesscoop.simplesync").PatchAll();  
+        new Harmony("com.silklesscoop.simplesync").PatchAll();
         
         // set up menu button and popups
         gameObject.AddComponent<UIAdder>();
