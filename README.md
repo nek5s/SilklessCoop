@@ -1,4 +1,6 @@
-# SilklessCoop
+# SilklessCoop - Deprecated
+
+**This repo has been discontinued and replaced by [SilklessLib](https://github.com/nek5s/SilklessLib) and [SilklessCoopVisual](https://github.com/nek5s/SilklessCoopVisual).**
 
 V2.4.2 - Bugfixes
 
