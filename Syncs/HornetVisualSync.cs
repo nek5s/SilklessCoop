@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using SilklessCoopVisual.Components;
 using SilklessLib;
-using SimpleSync.Components;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
-namespace SimpleSync.Syncs;
+namespace SilklessCoopVisual.Syncs;
 
 public class HornetPositionPacket : SilklessPacket
 {
@@ -27,27 +28,25 @@ public class HornetAnimationPacket : SilklessPacket
 public class HornetVisualSync : Sync
 {
     // self
-    private GameObject _hornetObject;
-    private tk2dSprite _hornetSprite;
-    private tk2dSpriteAnimator _hornetAnimator;
-    private Rigidbody2D _hornetRigidbody;
-    private readonly Dictionary<string, tk2dSpriteCollectionData> _collectionCache = new();
+    public GameObject cachedHornetObject;
+    public tk2dSprite cachedHornetSprite;
+    public tk2dSpriteAnimator cachedHornetAnimator;
+    public Rigidbody2D cachedHornetRigidbody;
+    public readonly Dictionary<string, tk2dSpriteCollectionData> CachedCollections = new();
     
     // others
-    private readonly Dictionary<string, GameObject> _playerObjects = new();
-    private readonly Dictionary<string, tk2dSprite> _playerSprites = new();
-    private readonly Dictionary<string, tk2dSpriteAnimator> _playerAnimators = new();
-    private readonly Dictionary<string, SimpleInterpolator> _playerInterpolators = new();
+    public readonly Dictionary<string, GameObject> PlayerObjects = new();
+    public readonly Dictionary<string, tk2dSprite> PlayerSprites = new();
+    public readonly Dictionary<string, tk2dSpriteAnimator> PlayerAnimators = new();
+    public readonly Dictionary<string, SimpleInterpolator> PlayerInterpolators = new();
     
-    protected override void OnConnect()
+    protected override void OnEnable()
     {
         SilklessAPI.AddHandler<HornetPositionPacket>(OnHornetPositionPacket);
         SilklessAPI.AddHandler<HornetAnimationPacket>(OnHornetAnimationPacket);
-        
-        new Harmony("com.silklesscoop.simplesync").PatchAll();
     }
 
-    protected override void OnDisconnect()
+    protected override void OnDisable()
     {
         SilklessAPI.RemoveHandler<HornetPositionPacket>(OnHornetPositionPacket);
         SilklessAPI.RemoveHandler<HornetAnimationPacket>(OnHornetAnimationPacket);
@@ -60,7 +59,7 @@ public class HornetVisualSync : Sync
 
     protected override void OnPlayerLeave(string id)
     {
-        if (_playerObjects.TryGetValue(id, out GameObject playerObject) && playerObject)
+        if (PlayerObjects.TryGetValue(id, out GameObject playerObject) && playerObject)
             Destroy(playerObject);
     }
     
@@ -70,15 +69,15 @@ public class HornetVisualSync : Sync
         {
             base.Update();
         
-            if (!_hornetObject) _hornetObject = GameObject.Find("Hero_Hornet");
-            if (!_hornetObject) _hornetObject = GameObject.Find("Hero_Hornet(Clone)");
-            if (_hornetObject && !_hornetRigidbody) _hornetRigidbody = _hornetObject.GetComponent<Rigidbody2D>();
-            if (_hornetObject && !_hornetSprite) _hornetSprite = _hornetObject.GetComponent<tk2dSprite>();
-            if (_hornetObject && !_hornetAnimator) _hornetAnimator = _hornetObject.GetComponent<tk2dSpriteAnimator>();
+            if (!cachedHornetObject) cachedHornetObject = GameObject.Find("Hero_Hornet");
+            if (!cachedHornetObject) cachedHornetObject = GameObject.Find("Hero_Hornet(Clone)");
+            if (cachedHornetObject && !cachedHornetRigidbody) cachedHornetRigidbody = cachedHornetObject.GetComponent<Rigidbody2D>();
+            if (cachedHornetObject && !cachedHornetSprite) cachedHornetSprite = cachedHornetObject.GetComponent<tk2dSprite>();
+            if (cachedHornetObject && !cachedHornetAnimator) cachedHornetAnimator = cachedHornetObject.GetComponent<tk2dSpriteAnimator>();
 
-            if (_hornetSprite && _collectionCache.Count == 0)
+            if (cachedHornetSprite && CachedCollections.Count == 0)
                 foreach (tk2dSpriteCollectionData c in Resources.FindObjectsOfTypeAll<tk2dSpriteCollectionData>())
-                    _collectionCache[c.spriteCollectionGUID] = c;
+                    CachedCollections[c.spriteCollectionGUID] = c;
         }
         catch (Exception e)
         {
@@ -95,11 +94,11 @@ public class HornetVisualSync : Sync
     {
         try
         {
-            foreach (GameObject playerObject in _playerObjects.Values) if (playerObject) Destroy(playerObject);
-            _playerObjects.Clear();
-            _playerSprites.Clear();
-            _playerAnimators.Clear();
-            _playerInterpolators.Clear();
+            foreach (GameObject playerObject in PlayerObjects.Values) if (playerObject) Destroy(playerObject);
+            PlayerObjects.Clear();
+            PlayerSprites.Clear();
+            PlayerAnimators.Clear();
+            PlayerInterpolators.Clear();
         }
         catch (Exception e)
         {
@@ -112,16 +111,16 @@ public class HornetVisualSync : Sync
     {
         try
         {
-            if (!_hornetObject || !_hornetRigidbody) return;
+            if (!cachedHornetObject || !cachedHornetRigidbody) return;
 
             SilklessAPI.SendPacket(new HornetPositionPacket
             {
                 Scene = SceneManager.GetActiveScene().name,
-                PositionX = _hornetObject.transform.position.x,
-                PositionY = _hornetObject.transform.position.y,
-                ScaleX = _hornetObject.transform.localScale.x,
-                VelocityX = _hornetRigidbody.linearVelocity.x * Time.timeScale,
-                VelocityY = _hornetRigidbody.linearVelocity.y * Time.timeScale,
+                PositionX = cachedHornetObject.transform.position.x,
+                PositionY = cachedHornetObject.transform.position.y,
+                ScaleX = cachedHornetObject.transform.localScale.x,
+                VelocityX = cachedHornetRigidbody.linearVelocity.x * Time.timeScale,
+                VelocityY = cachedHornetRigidbody.linearVelocity.y * Time.timeScale,
             });
         }
         catch (Exception e)
@@ -133,12 +132,12 @@ public class HornetVisualSync : Sync
     {
         try
         {
-            if (!_hornetObject || !_hornetAnimator) return;
+            if (!cachedHornetObject || !cachedHornetAnimator) return;
 
-            _playerObjects.TryGetValue(packet.ID, out GameObject playerObject);
-            _playerSprites.TryGetValue(packet.ID, out tk2dSprite playerSprite);
-            _playerAnimators.TryGetValue(packet.ID, out tk2dSpriteAnimator playerAnimator);
-            _playerInterpolators.TryGetValue(packet.ID, out SimpleInterpolator playerInterpolator);
+            PlayerObjects.TryGetValue(packet.ID, out GameObject playerObject);
+            PlayerSprites.TryGetValue(packet.ID, out tk2dSprite playerSprite);
+            PlayerAnimators.TryGetValue(packet.ID, out tk2dSpriteAnimator playerAnimator);
+            PlayerInterpolators.TryGetValue(packet.ID, out SimpleInterpolator playerInterpolator);
 
             if (!playerObject || !playerSprite || !playerAnimator || !playerInterpolator)
             {
@@ -147,28 +146,28 @@ public class HornetVisualSync : Sync
                 playerObject = new GameObject();
                 playerObject.name = $"SilklessCooperator - {packet.ID}";
                 playerObject.transform.SetParent(transform);
-                playerObject.transform.position = new Vector3(packet.PositionX, packet.PositionY, _hornetObject.transform.position.z + 0.001f);
+                playerObject.transform.position = new Vector3(packet.PositionX, packet.PositionY, cachedHornetObject.transform.position.z + 0.001f);
                 playerObject.transform.localScale = new Vector3(packet.ScaleX, 1, 1);
             
-                playerSprite = tk2dSprite.AddComponent(playerObject, _hornetSprite.Collection, _hornetSprite.spriteId);
+                playerSprite = tk2dSprite.AddComponent(playerObject, cachedHornetSprite.Collection, cachedHornetSprite.spriteId);
                 playerSprite.color = new Color(1, 1, 1, ModConfig.PlayerOpacity);
 
                 playerAnimator = playerObject.AddComponent<tk2dSpriteAnimator>();
-                playerAnimator.Library = _hornetAnimator.Library;
-                playerAnimator.Play(_hornetAnimator.CurrentClip);
+                playerAnimator.Library = cachedHornetAnimator.Library;
+                playerAnimator.Play(cachedHornetAnimator.CurrentClip);
 
                 playerInterpolator = playerObject.AddComponent<SimpleInterpolator>();
                 playerInterpolator.SetVelocity(new Vector3(packet.VelocityX, packet.VelocityY, 0));
             
                 LogUtil.LogDebug($"Created new player object for player {packet.ID}.");
 
-                _playerObjects[packet.ID] = playerObject;
-                _playerSprites[packet.ID] = playerSprite;
-                _playerAnimators[packet.ID] = playerAnimator;
-                _playerInterpolators[packet.ID] = playerInterpolator;
+                PlayerObjects[packet.ID] = playerObject;
+                PlayerSprites[packet.ID] = playerSprite;
+                PlayerAnimators[packet.ID] = playerAnimator;
+                PlayerInterpolators[packet.ID] = playerInterpolator;
             }
 
-            playerObject.transform.position = new Vector3(packet.PositionX, packet.PositionY, _hornetObject.transform.position.z + 0.001f);
+            playerObject.transform.position = new Vector3(packet.PositionX, packet.PositionY, cachedHornetObject.transform.position.z + 0.001f);
             playerObject.transform.localScale = new Vector3(packet.ScaleX, 1, 1);
             playerObject.SetActive(packet.Scene == SceneManager.GetActiveScene().name);
             playerInterpolator.SetVelocity(new Vector3(packet.VelocityX, packet.VelocityY, 0));
@@ -185,8 +184,8 @@ public class HornetVisualSync : Sync
     {
         try
         {
-            if (!_hornetObject) return;
-            if (!_playerAnimators.TryGetValue(packet.ID, out tk2dSpriteAnimator playerAnimator) || !playerAnimator) return;
+            if (!cachedHornetObject) return;
+            if (!PlayerAnimators.TryGetValue(packet.ID, out tk2dSpriteAnimator playerAnimator) || !playerAnimator) return;
         
             tk2dSpriteAnimationClip clip = ToolItemManager.GetCrestByName(packet.CrestName)?.HeroConfig?.GetAnimationClip(packet.ClipName);
             if (clip == null) clip = playerAnimator.Library.GetClipByName(packet.ClipName);
@@ -207,7 +206,7 @@ public class HornetVisualSync : Sync
 }
 
 [HarmonyPatch(typeof(tk2dSpriteAnimator), "Play", typeof(tk2dSpriteAnimationClip), typeof(float), typeof(float))]
-internal class HornetAnimationPatch
+public class HornetAnimationPatch
 {
     // ReSharper disable once InconsistentNaming
     public static void Prefix(tk2dSpriteAnimationClip clip, float clipStartTime, float overrideFps, tk2dSpriteAnimator __instance)

@@ -1,11 +1,11 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using SilklessCoopVisual.Components;
+using SilklessCoopVisual.Syncs;
 using SilklessLib;
-using SimpleSync.Components;
-using SimpleSync.Syncs;
 using UnityEngine;
 
-namespace SimpleSync;
+namespace SilklessCoopVisual;
 
 public class ModVersionPacket : SilklessPacket
 {
@@ -26,15 +26,7 @@ public class Plugin : BaseUnityPlugin
 
         // read mod config from file
         ModConfig.Bind(Config);
-
-        // copy lib-specific mod config parts
-        SilklessConfig.PrintDebugOutput = ModConfig.PrintDebugOutput;
-        SilklessConfig.ConnectionType = ModConfig.ConnectionType;
-        SilklessConfig.ConnectionTimeout = ModConfig.ConnectionTimeout;
-        SilklessConfig.StandaloneIP = ModConfig.EchoServerIP;
-        SilklessConfig.StandalonePort = ModConfig.EchoServerPort;
-        SilklessConfig.Version = MyPluginInfo.PLUGIN_VERSION;
-
+        
         // set up api
         if (!SilklessAPI.Init(Logger))
         {
@@ -57,7 +49,7 @@ public class Plugin : BaseUnityPlugin
         });
 
         // patch
-        new Harmony("com.silklesscoop.simplesync").PatchAll();
+        new Harmony("com.nek5.silklesscoopvisual").PatchAll();
         
         // set up menu button and popups
         gameObject.AddComponent<UIAdder>();
@@ -80,13 +72,11 @@ public class Plugin : BaseUnityPlugin
     {
         foreach (Sync s in gameObject.GetComponents<Sync>()) Destroy(s);
         
-        new Harmony("com.silklesscoop.simplesync").UnpatchSelf();
+        new Harmony("com.nek5.silklesscoopvisual").UnpatchSelf();
     }
 
     private void Update()
     {
-        SilklessAPI.Update(Time.unscaledDeltaTime);
-
         if (Input.GetKeyDown(ModConfig.MultiplayerToggleKey))
         {
             SilklessAPI.Toggle();

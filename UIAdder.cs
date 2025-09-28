@@ -4,9 +4,9 @@ using SilklessLib;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SimpleSync;
+namespace SilklessCoopVisual;
 
-internal class UIAdder : MonoBehaviour
+public class UIAdder : MonoBehaviour
 {
     private GameObject _oldButton;
     private GameObject _mainMenu;
@@ -46,7 +46,7 @@ internal class UIAdder : MonoBehaviour
 
             if (SilklessAPI.Initialized)
             {
-                _mainMenuText.text = SilklessAPI.Connected ? $"Disable Multiplayer [{ModConfig.ConnectionType}]" : $"Enable Multiplayer [{ModConfig.ConnectionType}]";
+                _mainMenuText.text = SilklessAPI.Connected ? $"Disable Multiplayer [{SilklessConfig.ConnectionType}]" : $"Enable Multiplayer [{SilklessConfig.ConnectionType}]";
             }
         }
         catch (Exception e)

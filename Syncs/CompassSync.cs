@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using SilklessLib;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-namespace SimpleSync.Syncs;
+namespace SilklessCoopVisual.Syncs;
 
 public class CompassPositionPacket : SilklessPacket
 {
@@ -15,20 +16,20 @@ public class CompassPositionPacket : SilklessPacket
 public class CompassSync : Sync
 {
     // self
-    private GameObject _map;
-    private GameMap _gameMap;
-    private GameObject _mainQuests;
-    private GameObject _compass;
+    public GameObject cachedMap;
+    public GameMap cachedGameMap;
+    public GameObject cachedMainQuests;
+    public GameObject cachedCompassIcon;
 
     // others
-    private readonly Dictionary<string, GameObject> _playerCompasses = new();
+    public readonly Dictionary<string, GameObject> PlayerCompasses = new();
     
-    protected override void OnConnect()
+    protected override void OnEnable()
     {
         SilklessAPI.AddHandler<CompassPositionPacket>(OnCompassPositionPacket);
     }
 
-    protected override void OnDisconnect()
+    protected override void OnDisable()
     {
         SilklessAPI.RemoveHandler<CompassPositionPacket>(OnCompassPositionPacket);
     }
@@ -40,7 +41,7 @@ public class CompassSync : Sync
 
     protected override void OnPlayerLeave(string id)
     {
-        if (_playerCompasses.TryGetValue(id, out GameObject playerCompass) && playerCompass) Destroy(playerCompass);
+        if (PlayerCompasses.TryGetValue(id, out GameObject playerCompass) && playerCompass) Destroy(playerCompass);
     }
 
     protected override void Update()
@@ -49,11 +50,11 @@ public class CompassSync : Sync
         {
             base.Update();
         
-            if (!_map) _map = GameObject.Find("Game_Map_Hornet");
-            if (!_map) _map = GameObject.Find("Game_Map_Hornet(Clone)");
-            if (_map && !_mainQuests) _mainQuests = _map.transform.Find("Main Quest Pins")?.gameObject;
-            if (_map && !_compass) _compass = _map.transform.Find("Compass Icon")?.gameObject;
-            if (_map && !_gameMap) _gameMap = _map.GetComponent<GameMap>();
+            if (!cachedMap) cachedMap = GameObject.Find("Game_Map_Hornet");
+            if (!cachedMap) cachedMap = GameObject.Find("Game_Map_Hornet(Clone)");
+            if (cachedMap && !cachedMainQuests) cachedMainQuests = cachedMap.transform.Find("Main Quest Pins")?.gameObject;
+            if (cachedMap && !cachedCompassIcon) cachedCompassIcon = cachedMap.transform.Find("Compass Icon")?.gameObject;
+            if (cachedMap && !cachedGameMap) cachedGameMap = cachedMap.GetComponent<GameMap>();
         }
         catch (Exception e)
         {
@@ -70,8 +71,8 @@ public class CompassSync : Sync
     {
         try
         {
-            foreach (GameObject playerCompass in _playerCompasses.Values) if(playerCompass) Destroy(playerCompass);
-            _playerCompasses.Clear();
+            foreach (GameObject playerCompass in PlayerCompasses.Values) if(playerCompass) Destroy(playerCompass);
+            PlayerCompasses.Clear();
         }
         catch (Exception e)
         {
@@ -84,15 +85,15 @@ public class CompassSync : Sync
     {
         try
         {
-            if (!_map || !_gameMap || !_compass) return;
+            if (!cachedMap || !cachedGameMap || !cachedCompassIcon) return;
 
-            _gameMap.PositionCompassAndCorpse();
+            cachedGameMap.PositionCompassAndCorpse();
 
             SilklessAPI.SendPacket(new CompassPositionPacket
             {
-                Active = _compass.activeSelf,
-                PosX = _compass.transform.localPosition.x,
-                PosY = _compass.transform.localPosition.y,
+                Active = cachedCompassIcon.activeSelf,
+                PosX = cachedCompassIcon.transform.localPosition.x,
+                PosY = cachedCompassIcon.transform.localPosition.y,
             });
         }
         catch (Exception e)
@@ -104,11 +105,11 @@ public class CompassSync : Sync
     {
         try
         {
-            if (!_map || !_compass || !_mainQuests) return;
+            if (!cachedMap || !cachedCompassIcon || !cachedMainQuests) return;
 
-            if (!_playerCompasses.TryGetValue(packet.ID, out GameObject playerCompass) || !playerCompass)
+            if (!PlayerCompasses.TryGetValue(packet.ID, out GameObject playerCompass) || !playerCompass)
             {
-                playerCompass = Instantiate(_compass, _map.transform);
+                playerCompass = Instantiate(cachedCompassIcon, cachedMap.transform);
                 playerCompass.name = $"SilklessCompass - {packet.ID}";
                 playerCompass.SetActive(packet.Active);
                 playerCompass.transform.localPosition = new Vector2(packet.PosX, packet.PosY);
@@ -116,7 +117,7 @@ public class CompassSync : Sync
                 tk2dSprite newSprite = playerCompass.GetComponent<tk2dSprite>();
                 newSprite.color = new Color(1, 1, 1, ModConfig.CompassOpacity);
                 
-                _playerCompasses[packet.ID] = playerCompass;
+                PlayerCompasses[packet.ID] = playerCompass;
             }
         
             playerCompass.SetActive(packet.Active);

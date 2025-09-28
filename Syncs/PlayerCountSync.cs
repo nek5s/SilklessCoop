@@ -3,24 +3,24 @@ using System.Collections.Generic;
 using SilklessLib;
 using UnityEngine;
 
-namespace SimpleSync.Syncs;
+namespace SilklessCoopVisual.Syncs;
 
 public class PlayerCountSync : Sync
 {
     // self
-    private GameObject _map;
-    private GameObject _mainQuests;
-    private GameObject _compass;
+    public GameObject cachedMap;
+    public GameObject cachedMainQuests;
+    public GameObject cachedCompassIcon;
     
     // others
     private readonly Stack<GameObject> _playerCountPins = new();
 
-    protected override void OnConnect()
+    protected override void OnEnable()
     {
         
     }
 
-    protected override void OnDisconnect()
+    protected override void OnDisable()
     {
         
     }
@@ -41,10 +41,10 @@ public class PlayerCountSync : Sync
         {
             base.Update();
         
-            if (!_map) _map = GameObject.Find("Game_Map_Hornet");
-            if (!_map) _map = GameObject.Find("Game_Map_Hornet(Clone)");
-            if (_map && !_mainQuests) _mainQuests = _map.transform.Find("Main Quest Pins")?.gameObject;
-            if (_map && !_compass) _compass = _map.transform.Find("Compass Icon")?.gameObject;
+            if (!cachedMap) cachedMap = GameObject.Find("Game_Map_Hornet");
+            if (!cachedMap) cachedMap = GameObject.Find("Game_Map_Hornet(Clone)");
+            if (cachedMap && !cachedMainQuests) cachedMainQuests = cachedMap.transform.Find("Main Quest Pins")?.gameObject;
+            if (cachedMap && !cachedCompassIcon) cachedCompassIcon = cachedMap.transform.Find("Compass Icon")?.gameObject;
         }
         catch (Exception e)
         {
@@ -56,12 +56,12 @@ public class PlayerCountSync : Sync
     {
         try
         {
-            if (!_compass || !_map || !_mainQuests) return;
+            if (!cachedCompassIcon || !cachedMap || !cachedMainQuests) return;
 
             while (_playerCountPins.Count < SilklessAPI.PlayerIDs.Count)
             {
-                GameObject pin = Instantiate(_compass, _map.transform);
-                pin.SetActive(_mainQuests.activeSelf);
+                GameObject pin = Instantiate(cachedCompassIcon, cachedMap.transform);
+                pin.SetActive(cachedMainQuests.activeSelf);
                 pin.name = "SilklessPlayerCount";
                 pin.transform.position = new Vector3(-14.8f + 0.6f * SilklessAPI.PlayerIDs.Count, -8.2f, 0);
                 pin.transform.localScale = new Vector3(0.6f, 0.6f, 1);
@@ -84,7 +84,7 @@ public class PlayerCountSync : Sync
                 if (!pin) continue;
                 
                 pin.transform.position = new Vector3(-14.8f + 0.6f * (i++), -8.2f, 0);
-                pin.SetActive(_mainQuests.activeSelf);
+                pin.SetActive(cachedMainQuests.activeSelf);
             }
         }
         catch (Exception e)

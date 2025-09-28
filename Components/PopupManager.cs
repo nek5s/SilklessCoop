@@ -4,9 +4,9 @@ using SilklessLib;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SimpleSync.Components;
+namespace SilklessCoopVisual.Components;
 
-internal class PopupManager : MonoBehaviour
+public class PopupManager : MonoBehaviour
 {
     private class PopupEntry
     {
@@ -34,6 +34,7 @@ internal class PopupManager : MonoBehaviour
         try
         {
             if (!_text) return;
+            if (ModConfig.PopupTimeout == 0) return;
 
             GameObject newObject = new GameObject();
             newObject.transform.SetParent(transform);

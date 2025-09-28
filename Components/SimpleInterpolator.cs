@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace SimpleSync.Components;
+namespace SilklessCoopVisual.Components;
 
-internal class SimpleInterpolator : MonoBehaviour
+public class SimpleInterpolator : MonoBehaviour
 {
     private Vector3 _velocity;
     

@@ -8,15 +8,16 @@ This repository and all its contents are protected by copyright law. The code, d
 
 ## Restrictions
 
-- You MAY NOT use the code for commercial purposes without prior written approval from the project owner.
+- You MAY NOT use the repository contents for commercial purposes without prior written approval from the project owner.
 - You MAY NOT modify, distribute, or repost any part of this repository, including the code, documentation, or any other materials, without explicit permission from the project owner.
 - You MAY NOT use any derivative works of the code in commercial products or services.
 
-- If you make any modifications to the repository or any derivative works, you must share those modifications under the same license, and you must get permission from the project owner before redistributing any modified versions.
+- If you create content based on the repository content, you must share your work under the same license.
 
 ## Grant of Rights
 
-The project owner may, at their sole discretion, provide permission to use, modify, or redistribute the code under specific conditions. Such permission must be granted in writing (e.g., via email or another formal means) and will not be considered granted unless explicitly stated.
+The project owner may, at their sole discretion, provide permission to use, modify, or redistribute the code under specific conditions.
+Such permission must be granted in writing (e.g., via email or another formal means) and will not be considered granted unless explicitly stated.
 
 ## Disclaimer
 
@@ -26,8 +27,8 @@ By accessing or using this repository, you agree to abide by the terms outlined 
 
 ## TL;DR
 
-- You may create mods based on the SilklessAPI if you follow the terms and conditions.
-- You may include the built release files in your mod as long as you open-source it and credit my mod/repo.
-- You may NOT publish my source code (keep my code out of your repo, just include the dll).
+- You may create mods based on my work if you open-source your code, credit mine, and follow the terms and conditions.
+- You may include the built release files in your mod download for installation simplicity.
+- You may NOT publish my source code (keep my code out of your repo, just put an include reference to my dll).
 - You may NOT make changes to my code and publish it without my explicit permission.
-- You may NOT use my library commercially without my explicit permission.
+- You may NOT use my work commercially without my explicit permission.
